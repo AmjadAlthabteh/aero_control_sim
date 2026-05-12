@@ -13,6 +13,7 @@ add_executable(aero_control_sim
 )
 
 target_compile_features(aero_control_sim PRIVATE cxx_std_17)
+target_include_directories(aero_control_sim PRIVATE include)
 
 if(MSVC)
   target_compile_options(aero_control_sim PRIVATE /W4 /permissive-)
@@ -24,4 +25,3 @@ if(AERO_CONTROL_SIM_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
-
