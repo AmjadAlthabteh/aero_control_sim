@@ -1,6 +1,7 @@
 #include <cmath>
 #include <iostream>
 
+#include "aero/cli.hpp"
 #include "aero/core.hpp"
 #include "aero/csv.hpp"
 #include "aero/models.hpp"
@@ -12,9 +13,26 @@ namespace
 constexpr double deg2rad(double deg) { return deg * (3.14159265358979323846 / 180.0); }
 } // namespace
 
-int main()
+int main(int argc, char** argv)
 {
-    const aero::SimConfig cfg{};
+    bool ok = true;
+    const auto args = aero::parseArgs(argc, argv, ok);
+    if (!ok || args.help)
+    {
+        std::cout << "aero_control_sim\n\n"
+                     "Flags:\n"
+                     "  --dt <seconds>         Timestep (default 0.01)\n"
+                     "  --duration <seconds>   Sim duration (default 20)\n"
+                     "  --step-alt <meters>    Altitude step command (default 100)\n"
+                     "  --step-time <seconds>  Step time (default 1)\n"
+                     "  --out <path>           Output CSV (default out.csv)\n";
+        return ok ? 0 : 2;
+    }
+
+    aero::SimConfig cfg{};
+    cfg.dt_s = args.dt_s;
+    cfg.duration_s = args.duration_s;
+
     const auto plant = aero::makeToyLongitudinalModel();
 
     aero::Vec<4> x{};
@@ -41,17 +59,17 @@ int main()
     pitchCfg.anti_windup = true;
     aero::Pid pitchPid(pitchCfg);
 
-    aero::CsvWriter csv("out.csv");
+    aero::CsvWriter csv(args.out_csv);
     if (!csv.ok())
     {
-        std::cerr << "Failed to open out.csv for writing\n";
+        std::cerr << "Failed to open " << args.out_csv << " for writing\n";
         return 1;
     }
 
     csv.writeHeader({"t_s", "h_m", "w_mps", "theta_rad", "q_radps", "h_cmd_m", "theta_cmd_rad", "elev_cmd_rad"});
 
-    const double step_altitude_m = 100.0;
-    const double step_time_s = 1.0;
+    const double step_altitude_m = args.step_altitude_m;
+    const double step_time_s = args.step_time_s;
 
     for (double t = 0.0; t <= cfg.duration_s; t += cfg.dt_s)
     {
@@ -74,6 +92,6 @@ int main()
         csv.writeRow({t, x[0], x[1], x[2], x[3], h_cmd, theta_cmd, elev_cmd});
     }
 
-    std::cout << "Wrote out.csv\n";
+    std::cout << "Wrote " << args.out_csv << "\n";
     return 0;
 }

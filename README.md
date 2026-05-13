@@ -26,3 +26,9 @@ cmake --build build --config Release
 ```
 
 Writes `out.csv` in the repo root (time history of altitude/pitch/elevator).
+
+## Flags
+
+```bash
+./build/Release/aero_control_sim --help
+```
