@@ -1,19 +1,20 @@
 #pragma once
 
+#include <iomanip>
 #include <fstream>
 #include <initializer_list>
-#include <sstream>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace aero
 {
 class CsvWriter
 {
 public:
-    explicit CsvWriter(std::string path) : path_(std::move(path)), out_(path_)
+    explicit CsvWriter(std::string path)
+        : path_(std::move(path)), out_(path_, std::ios::out | std::ios::trunc)
     {
+        out_ << std::fixed << std::setprecision(10);
     }
 
     bool ok() const { return out_.good(); }
@@ -51,4 +52,3 @@ private:
 };
 
 } // namespace aero
-
