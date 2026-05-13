@@ -3,6 +3,9 @@
 /out/
 /bin/
 
+# Outputs
+/out.csv
+
 # IDE
 /.vs/
 /.vscode/
@@ -14,4 +17,3 @@
 # OS
 .DS_Store
 Thumbs.db
-
