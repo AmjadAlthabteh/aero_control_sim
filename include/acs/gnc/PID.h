@@ -8,6 +8,7 @@ public:
     double kp{};
     double ki{};
     double kd{};
+    double kaw{1.0};  // anti-windup gain (back-calculation)
   };
 
   PID() = default;
@@ -17,7 +18,7 @@ public:
   void set_limits(double i_limit, double out_limit);
   void reset();
 
-  // simple pid with derivative on measurement.
+  // simple pid with derivative on measurement and anti-windup.
   double update(double setpoint, double measurement, double dt_s);
 
 private:

@@ -26,9 +26,7 @@ void PID::reset() {
 double PID::update(double setpoint, double measurement, double dt_s) {
   const double error = setpoint - measurement;
 
-  integrator_ += error * dt_s;
-  integrator_ = clamp(integrator_, -i_limit_, i_limit_);
-
+  // derivative on measurement (prevents derivative kick on setpoint changes)
   double d_meas = 0.0;
   if (has_prev_ && dt_s > 0.0) {
     d_meas = (measurement - prev_measurement_) / dt_s;
@@ -36,8 +34,16 @@ double PID::update(double setpoint, double measurement, double dt_s) {
   prev_measurement_ = measurement;
   has_prev_ = true;
 
-  const double u = gains_.kp * error + gains_.ki * integrator_ - gains_.kd * d_meas;
-  return clamp(u, -out_limit_, out_limit_);
+  // compute control output before saturation
+  const double u_unsat = gains_.kp * error + gains_.ki * integrator_ - gains_.kd * d_meas;
+  const double u = clamp(u_unsat, -out_limit_, out_limit_);
+
+  // back-calculation anti-windup: reduce integrator based on saturation error
+  const double u_sat_error = u - u_unsat;
+  integrator_ += (error + gains_.kaw * u_sat_error) * dt_s;
+  integrator_ = clamp(integrator_, -i_limit_, i_limit_);
+
+  return u;
 }
 
 }  // namespace acs::gnc
