@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Dev/aero-control-system-sim/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
