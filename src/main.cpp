@@ -34,21 +34,23 @@ static void print_help(const char* argv0) {
   std::cout << "  --help                 Show this help\n";
 }
 
-static bool parse_double(const char* s, double& out) {
+static bool parse_double(const char* s, double& out, const char* param_name) {
   try {
     out = std::stod(s);
     return true;
   } catch (...) {
+    std::cerr << "Error: Invalid value '" << s << "' for parameter " << param_name << "\n";
     return false;
   }
 }
 
-static bool parse_uint(const char* s, unsigned int& out) {
+static bool parse_uint(const char* s, unsigned int& out, const char* param_name) {
   try {
     const auto v = std::stoul(s);
     out = static_cast<unsigned int>(v);
     return true;
   } catch (...) {
+    std::cerr << "Error: Invalid value '" << s << "' for parameter " << param_name << "\n";
     return false;
   }
 }
@@ -95,60 +97,60 @@ int main(int argc, char* argv[]) {
       print_help(argv[0]);
       return 0;
     } else if (arg == "--dt" && i + 1 < argc) {
-      (void)parse_double(argv[++i], dt_s);
+      if (!parse_double(argv[++i], dt_s, "--dt")) return 1;
     } else if (arg == "--time" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_time_s);
+      if (!parse_double(argv[++i], sim_time_s, "--time")) return 1;
     } else if (arg == "--telemetry" && i + 1 < argc) {
       telemetry_path = argv[++i];
     } else if (arg == "--seed" && i + 1 < argc) {
-      (void)parse_uint(argv[++i], seed);
+      if (!parse_uint(argv[++i], seed, "--seed")) return 1;
     } else if (arg == "--wind" && i + 3 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.wind.mean_ned_m_s.x);
-      (void)parse_double(argv[++i], sim_cfg.wind.mean_ned_m_s.y);
-      (void)parse_double(argv[++i], sim_cfg.wind.mean_ned_m_s.z);
+      if (!parse_double(argv[++i], sim_cfg.wind.mean_ned_m_s.x, "--wind N")) return 1;
+      if (!parse_double(argv[++i], sim_cfg.wind.mean_ned_m_s.y, "--wind E")) return 1;
+      if (!parse_double(argv[++i], sim_cfg.wind.mean_ned_m_s.z, "--wind D")) return 1;
     } else if (arg == "--gust-std" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.wind.gust_std_dev_m_s);
+      if (!parse_double(argv[++i], sim_cfg.wind.gust_std_dev_m_s, "--gust-std")) return 1;
     } else if (arg == "--gust-tau" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.wind.gust_tau_s);
+      if (!parse_double(argv[++i], sim_cfg.wind.gust_tau_s, "--gust-tau")) return 1;
     } else if (arg == "--surface-tau" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.actuators.surface_tau_s);
+      if (!parse_double(argv[++i], sim_cfg.actuators.surface_tau_s, "--surface-tau")) return 1;
     } else if (arg == "--surface-rate" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.actuators.surface_rate_limit_rad_s);
+      if (!parse_double(argv[++i], sim_cfg.actuators.surface_rate_limit_rad_s, "--surface-rate")) return 1;
     } else if (arg == "--throttle-tau" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.actuators.throttle_tau_s);
+      if (!parse_double(argv[++i], sim_cfg.actuators.throttle_tau_s, "--throttle-tau")) return 1;
     } else if (arg == "--throttle-rate" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.actuators.throttle_rate_limit_per_s);
+      if (!parse_double(argv[++i], sim_cfg.actuators.throttle_rate_limit_per_s, "--throttle-rate")) return 1;
     } else if (arg == "--stuck-aileron-time" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.actuator_faults.aileron_stuck_time_s);
+      if (!parse_double(argv[++i], sim_cfg.actuator_faults.aileron_stuck_time_s, "--stuck-aileron-time")) return 1;
     } else if (arg == "--stuck-elevator-time" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.actuator_faults.elevator_stuck_time_s);
+      if (!parse_double(argv[++i], sim_cfg.actuator_faults.elevator_stuck_time_s, "--stuck-elevator-time")) return 1;
     } else if (arg == "--stuck-rudder-time" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.actuator_faults.rudder_stuck_time_s);
+      if (!parse_double(argv[++i], sim_cfg.actuator_faults.rudder_stuck_time_s, "--stuck-rudder-time")) return 1;
     } else if (arg == "--stuck-throttle-time" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sim_cfg.actuator_faults.throttle_stuck_time_s);
+      if (!parse_double(argv[++i], sim_cfg.actuator_faults.throttle_stuck_time_s, "--stuck-throttle-time")) return 1;
     } else if (arg == "--gps-dropout-prob" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sensor_cfg.gps_dropout_prob);
+      if (!parse_double(argv[++i], sensor_cfg.gps_dropout_prob, "--gps-dropout-prob")) return 1;
     } else if (arg == "--baro-dropout-prob" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sensor_cfg.baro_dropout_prob);
+      if (!parse_double(argv[++i], sensor_cfg.baro_dropout_prob, "--baro-dropout-prob")) return 1;
     } else if (arg == "--accel-bias" && i + 3 < argc) {
-      (void)parse_double(argv[++i], sensor_cfg.accel_bias_m_s2.x);
-      (void)parse_double(argv[++i], sensor_cfg.accel_bias_m_s2.y);
-      (void)parse_double(argv[++i], sensor_cfg.accel_bias_m_s2.z);
+      if (!parse_double(argv[++i], sensor_cfg.accel_bias_m_s2.x, "--accel-bias X")) return 1;
+      if (!parse_double(argv[++i], sensor_cfg.accel_bias_m_s2.y, "--accel-bias Y")) return 1;
+      if (!parse_double(argv[++i], sensor_cfg.accel_bias_m_s2.z, "--accel-bias Z")) return 1;
     } else if (arg == "--gyro-bias" && i + 3 < argc) {
-      (void)parse_double(argv[++i], sensor_cfg.gyro_bias_rad_s.x);
-      (void)parse_double(argv[++i], sensor_cfg.gyro_bias_rad_s.y);
-      (void)parse_double(argv[++i], sensor_cfg.gyro_bias_rad_s.z);
+      if (!parse_double(argv[++i], sensor_cfg.gyro_bias_rad_s.x, "--gyro-bias X")) return 1;
+      if (!parse_double(argv[++i], sensor_cfg.gyro_bias_rad_s.y, "--gyro-bias Y")) return 1;
+      if (!parse_double(argv[++i], sensor_cfg.gyro_bias_rad_s.z, "--gyro-bias Z")) return 1;
     } else if (arg == "--accel-bias-rw" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sensor_cfg.accel_bias_rw_std_m_s2_sqrt_s);
+      if (!parse_double(argv[++i], sensor_cfg.accel_bias_rw_std_m_s2_sqrt_s, "--accel-bias-rw")) return 1;
     } else if (arg == "--gyro-bias-rw" && i + 1 < argc) {
-      (void)parse_double(argv[++i], sensor_cfg.gyro_bias_rw_std_rad_s_sqrt_s);
+      if (!parse_double(argv[++i], sensor_cfg.gyro_bias_rw_std_rad_s_sqrt_s, "--gyro-bias-rw")) return 1;
     } else if (arg == "--hold-last-on-dropout" && i + 1 < argc) {
       double v = 1.0;
-      (void)parse_double(argv[++i], v);
+      if (!parse_double(argv[++i], v, "--hold-last-on-dropout")) return 1;
       sensor_cfg.hold_last_on_dropout = (v != 0.0);
     } else {
-      std::cout << "Unknown option: " << arg << "\n";
-      std::cout << "Use --help for usage.\n";
+      std::cerr << "Unknown option: " << arg << "\n";
+      std::cerr << "Use --help for usage.\n";
       return 1;
     }
   }
