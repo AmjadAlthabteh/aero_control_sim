@@ -156,6 +156,32 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  // Validate simulation parameters
+  if (dt_s <= 0.0 || dt_s > 1.0) {
+    std::cerr << "Error: --dt must be in range (0, 1.0], got " << dt_s << "\n";
+    return 1;
+  }
+  if (sim_time_s <= 0.0 || sim_time_s > 10000.0) {
+    std::cerr << "Error: --time must be in range (0, 10000], got " << sim_time_s << "\n";
+    return 1;
+  }
+  if (sim_cfg.wind.gust_std_dev_m_s < 0.0) {
+    std::cerr << "Error: --gust-std must be non-negative, got " << sim_cfg.wind.gust_std_dev_m_s << "\n";
+    return 1;
+  }
+  if (sim_cfg.wind.gust_tau_s <= 0.0) {
+    std::cerr << "Error: --gust-tau must be positive, got " << sim_cfg.wind.gust_tau_s << "\n";
+    return 1;
+  }
+  if (sensor_cfg.gps_dropout_prob < 0.0 || sensor_cfg.gps_dropout_prob > 1.0) {
+    std::cerr << "Error: --gps-dropout-prob must be in [0, 1], got " << sensor_cfg.gps_dropout_prob << "\n";
+    return 1;
+  }
+  if (sensor_cfg.baro_dropout_prob < 0.0 || sensor_cfg.baro_dropout_prob > 1.0) {
+    std::cerr << "Error: --baro-dropout-prob must be in [0, 1], got " << sensor_cfg.baro_dropout_prob << "\n";
+    return 1;
+  }
+
   sim_cfg.dt_s = dt_s;
   sim_cfg.sim_time_s = sim_time_s;
   sim_cfg.seed = seed;
