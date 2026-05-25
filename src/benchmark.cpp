@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "acs/gnc/FlightController.h"
+#include "acs/math/Constants.h"
 #include "acs/profiling/PerformanceProfiler.h"
 #include "acs/simulation/Aircraft.h"
 #include "acs/simulation/Simulator.h"
@@ -40,10 +41,10 @@ void run_single_simulation(const acs::simulation::AircraftConfig& aircraft_cfg,
 
   acs::simulation::Simulator sim(sim_cfg, aircraft, controller, sensor_cfg);
 
-  constexpr double kPi = 3.14159265358979323846;
+  using acs::math::kDeg2Rad;
   acs::gnc::ControllerTargets targets{};
   targets.altitude_m = 60.0;
-  targets.heading_rad = 20.0 * kPi / 180.0;
+  targets.heading_rad = 20.0 * kDeg2Rad;
   targets.roll_rad = 0.0;
   targets.pitch_rad = 0.0;
   targets.airspeed_m_s = 17.0;

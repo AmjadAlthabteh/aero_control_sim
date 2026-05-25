@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "acs/math/Constants.h"
 #include "acs/physics/Atmosphere.h"
 #include "acs/physics/Gravity.h"
 #include "acs/physics/RK4.h"
@@ -23,12 +24,12 @@ Simulator::Simulator(const SimulatorConfig& sim_cfg,
       actuators_(sim_cfg.actuators, sim_cfg.actuator_faults) {}
 
 static acs::physics::RigidBodyState make_initial_state() {
-  constexpr double kPi = 3.14159265358979323846;
+  using acs::math::kDeg2Rad;
   acs::physics::RigidBodyState x{};
   x.position_ned_m = acs::math::Vector3(0.0, 0.0, -60.0);  // 60 m altitude
   x.velocity_body_m_s = acs::math::Vector3(16.0, 0.6, 0.2);
   x.omega_body_rad_s = acs::math::Vector3(0.02, -0.01, 0.03);
-  x.q_nb = acs::math::Quaternion::from_euler321(12.0 * kPi / 180.0, -6.0 * kPi / 180.0, 25.0 * kPi / 180.0);
+  x.q_nb = acs::math::Quaternion::from_euler321(12.0 * kDeg2Rad, -6.0 * kDeg2Rad, 25.0 * kDeg2Rad);
   return x;
 }
 

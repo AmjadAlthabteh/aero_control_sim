@@ -3,14 +3,17 @@
 #include <algorithm>
 #include <cmath>
 
+#include "acs/math/Constants.h"
+
 namespace acs::gnc {
 
 static double clamp(double x, double lo, double hi) { return std::max(lo, std::min(hi, x)); }
 
 static double wrap_pi(double a) {
-  constexpr double kPi = 3.14159265358979323846;
-  while (a > kPi) a -= 2.0 * kPi;
-  while (a < -kPi) a += 2.0 * kPi;
+  using acs::math::kPi;
+  using acs::math::kTwoPi;
+  while (a > kPi) a -= kTwoPi;
+  while (a < -kPi) a += kTwoPi;
   return a;
 }
 

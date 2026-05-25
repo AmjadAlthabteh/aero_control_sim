@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 
+#include "acs/math/Constants.h"
 #include "acs/math/Matrix3.h"
 #include "acs/math/Quaternion.h"
 #include "acs/math/Vector3.h"
@@ -77,8 +78,8 @@ void test_quaternion_operations() {
   });
 
   suite.add_test("Quaternion from euler angles", [](TestResult& r) {
-    constexpr double kPi = 3.14159265358979323846;
-    Quaternion q = Quaternion::from_euler321(0.0, 0.0, kPi / 2.0);  // 90 deg yaw
+    using acs::math::kHalfPi;
+    Quaternion q = Quaternion::from_euler321(0.0, 0.0, kHalfPi);  // 90 deg yaw
     Vector3 x_body(1.0, 0.0, 0.0);
     Vector3 x_ned = q.rotate(x_body);
     assert_near(r, 0.0, x_ned.x, 1e-6, "90 deg yaw should rotate X to Y");

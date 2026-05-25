@@ -3,6 +3,7 @@
 #include <string>
 
 #include "acs/gnc/FlightController.h"
+#include "acs/math/Constants.h"
 #include "acs/simulation/Aircraft.h"
 #include "acs/simulation/Simulator.h"
 
@@ -56,9 +57,9 @@ static bool parse_uint(const char* s, unsigned int& out, const char* param_name)
 }
 
 int main(int argc, char* argv[]) {
+  using acs::math::kPi;
   using acs::math::Matrix3;
   using acs::math::Vector3;
-  constexpr double kPi = 3.14159265358979323846;
 
   double dt_s = 0.01;
   double sim_time_s = 35.0;
