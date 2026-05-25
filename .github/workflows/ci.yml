@@ -9,10 +9,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          clean: true
       - name: Configure
-        run: cmake -S . -B build -DAERO_CONTROL_SIM_BUILD_TESTS=ON
+        run: cmake -S . -B build-ci -DAERO_CONTROL_SIM_BUILD_TESTS=ON
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build-ci --config Release
       - name: Test
-        run: ctest --test-dir build -C Release --output-on-failure
+        run: ctest --test-dir build-ci -C Release --output-on-failure
 
