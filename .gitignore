@@ -1,0 +1,19 @@
+# Build outputs
+/build/
+/out/
+/bin/
+
+# Outputs
+/out.csv
+
+# IDE
+/.vs/
+/.vscode/
+*.user
+*.suo
+*.VC.db
+*.VC.VC.opendb
+
+# OS
+.DS_Store
+Thumbs.db

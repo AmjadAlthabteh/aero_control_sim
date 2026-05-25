@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # aero-control-system-sim
 
 `aero-control-system-sim` is a high-performance c++17 flight dynamics simulator with a 6dof rigid-body model, basic aerodynamics, sensor simulation, pid-based stabilization/hold modes, and comprehensive performance profiling and testing tools.
@@ -47,11 +48,30 @@ cmake --build build -j
 ```
 
 ### windows (msvc)
+=======
+# aero_control_sim
+
+Small, dependency-light aircraft control simulation playground.
+
+## Goals
+
+- Simulate a simple aircraft model with a fixed timestep.
+- Implement common control blocks (PID, filters, saturations).
+- Export data to CSV for plotting/analysis.
+
+## Status
+
+Work in progress.
+
+## Build
+
+>>>>>>> ff9e5a64303f6786744c89cf3ac13bfab0040f04
 ```bash
 cmake -S . -B build
 cmake --build build --config Release
 ```
 
+<<<<<<< HEAD
 ## executables
 
 the build process creates several executables:
@@ -138,3 +158,18 @@ the aero model is intentionally lightweight (linear coefficients + simple contro
 - benchmark mode disables telemetry I/O for pure compute performance
 - multi-threaded benchmarks scale nearly linearly up to physical core count
 - profiling adds minimal overhead (< 1-2% typical)
+=======
+## Run
+
+```bash
+./build/Release/aero_control_sim
+```
+
+Writes `out.csv` in the repo root (time history of altitude/pitch/elevator).
+
+## Flags
+
+```bash
+./build/Release/aero_control_sim --help
+```
+>>>>>>> ff9e5a64303f6786744c89cf3ac13bfab0040f04

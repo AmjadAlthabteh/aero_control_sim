@@ -1,11 +1,18 @@
+<<<<<<< HEAD
 cmake_minimum_required(VERSION 3.16)
 
 project(aero-control-system-sim VERSION 0.1.0 LANGUAGES CXX)
+=======
+cmake_minimum_required(VERSION 3.20)
+
+project(aero_control_sim LANGUAGES CXX)
+>>>>>>> ff9e5a64303f6786744c89cf3ac13bfab0040f04
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+<<<<<<< HEAD
 option(ACS_BUILD_EXAMPLES "build demo executable" ON)
 
 add_library(acs
@@ -52,4 +59,24 @@ if(ACS_BUILD_EXAMPLES)
 
   add_executable(acs-tests src/tests.cpp)
   target_link_libraries(acs-tests PRIVATE acs)
+=======
+option(AERO_CONTROL_SIM_BUILD_TESTS "Build tests" ON)
+
+add_executable(aero_control_sim
+    src/main.cpp
+)
+
+target_compile_features(aero_control_sim PRIVATE cxx_std_17)
+target_include_directories(aero_control_sim PRIVATE include)
+
+if(MSVC)
+  target_compile_options(aero_control_sim PRIVATE /W4 /permissive-)
+else()
+  target_compile_options(aero_control_sim PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+if(AERO_CONTROL_SIM_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+>>>>>>> ff9e5a64303f6786744c89cf3ac13bfab0040f04
 endif()
