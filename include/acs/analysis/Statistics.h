@@ -85,6 +85,8 @@ public:
     StatsSummary<double> yaw_rate_rad_s;
 
     // Performance metrics
+    double target_altitude_m{60.0};
+    bool target_altitude_from_telemetry{false};
     double settling_time_s{0.0};
     double max_overshoot_pct{0.0};
     double steady_state_error{0.0};
@@ -95,7 +97,9 @@ public:
   static void print_report(const AnalysisReport& report);
 
 private:
-  static std::vector<std::vector<double>> read_csv(const std::string& path);
+  static bool read_csv(const std::string& path,
+                       std::vector<std::string>& header_out,
+                       std::vector<std::vector<double>>& data_out);
 };
 
 // Utility functions for signal processing

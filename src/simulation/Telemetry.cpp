@@ -27,7 +27,8 @@ void Telemetry::write_header() {
           "wind_n_mps,wind_e_mps,wind_d_mps,"
           "u_air_mps,v_air_mps,w_air_mps,"
           "aileron_cmd_rad,elevator_cmd_rad,rudder_cmd_rad,throttle_cmd_01,"
-          "baro_valid,gps_valid\n";
+          "baro_valid,gps_valid,"
+          "target_alt_m,target_heading_rad,target_airspeed_mps,target_roll_rad,target_pitch_rad\n";
 }
 
 void Telemetry::write_row(const std::string& csv_row) {

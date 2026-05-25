@@ -184,7 +184,9 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
     row << wind_n.x << "," << wind_n.y << "," << wind_n.z << ",";
     row << v_air_b_log.x << "," << v_air_b_log.y << "," << v_air_b_log.z << ",";
     row << u_cmd.aileron_rad << "," << u_cmd.elevator_rad << "," << u_cmd.rudder_rad << "," << u_cmd.throttle_01 << ",";
-    row << (baro.valid ? 1 : 0) << "," << (gps.valid ? 1 : 0);
+    row << (baro.valid ? 1 : 0) << "," << (gps.valid ? 1 : 0) << ",";
+    row << targets.altitude_m << "," << targets.heading_rad << "," << targets.airspeed_m_s << "," << targets.roll_rad << ","
+        << targets.pitch_rad;
     if (enable_telemetry) {
       log.write_row(row.str());
     }

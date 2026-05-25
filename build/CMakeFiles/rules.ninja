@@ -88,9 +88,17 @@ rule CXX_EXECUTABLE_LINKER__acs-analyzer_Release
 
 
 #############################################
+# Rule for running custom commands.
+
+rule CUSTOM_COMMAND
+  command = $COMMAND
+  description = $DESC
+
+
+#############################################
 # Rule for compiling CXX files.
 
-rule CXX_COMPILER__acs-tests_unscanned_Release
+rule CXX_COMPILER__aero_control_sim_test_sanity_unscanned_Release
   depfile = $DEP_FILE
   deps = gcc
   command = ${LAUNCHER}${CODE_CHECK}C:\Compiler\mingw32\bin\c++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -100,18 +108,48 @@ rule CXX_COMPILER__acs-tests_unscanned_Release
 #############################################
 # Rule for linking CXX executable.
 
-rule CXX_EXECUTABLE_LINKER__acs-tests_Release
+rule CXX_EXECUTABLE_LINKER__aero_control_sim_test_sanity_Release
   command = C:\Windows\system32\cmd.exe /C "$PRE_LINK && C:\Compiler\mingw32\bin\c++.exe $FLAGS $LINK_FLAGS $in -o $TARGET_FILE -Wl,--out-implib,$TARGET_IMPLIB -Wl,--major-image-version,0,--minor-image-version,0 $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
   description = Linking CXX executable $TARGET_FILE
   restat = $RESTAT
 
 
 #############################################
-# Rule for running custom commands.
+# Rule for compiling CXX files.
 
-rule CUSTOM_COMMAND
-  command = $COMMAND
-  description = $DESC
+rule CXX_COMPILER__aero_control_sim_test_pid_unscanned_Release
+  depfile = $DEP_FILE
+  deps = gcc
+  command = ${LAUNCHER}${CODE_CHECK}C:\Compiler\mingw32\bin\c++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  description = Building CXX object $out
+
+
+#############################################
+# Rule for linking CXX executable.
+
+rule CXX_EXECUTABLE_LINKER__aero_control_sim_test_pid_Release
+  command = C:\Windows\system32\cmd.exe /C "$PRE_LINK && C:\Compiler\mingw32\bin\c++.exe $FLAGS $LINK_FLAGS $in -o $TARGET_FILE -Wl,--out-implib,$TARGET_IMPLIB -Wl,--major-image-version,0,--minor-image-version,0 $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
+  description = Linking CXX executable $TARGET_FILE
+  restat = $RESTAT
+
+
+#############################################
+# Rule for compiling CXX files.
+
+rule CXX_COMPILER__aero_control_sim_test_analyzer_unscanned_Release
+  depfile = $DEP_FILE
+  deps = gcc
+  command = ${LAUNCHER}${CODE_CHECK}C:\Compiler\mingw32\bin\c++.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  description = Building CXX object $out
+
+
+#############################################
+# Rule for linking CXX executable.
+
+rule CXX_EXECUTABLE_LINKER__aero_control_sim_test_analyzer_Release
+  command = C:\Windows\system32\cmd.exe /C "$PRE_LINK && C:\Compiler\mingw32\bin\c++.exe $FLAGS $LINK_FLAGS $in -o $TARGET_FILE -Wl,--out-implib,$TARGET_IMPLIB -Wl,--major-image-version,0,--minor-image-version,0 $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
+  description = Linking CXX executable $TARGET_FILE
+  restat = $RESTAT
 
 
 #############################################

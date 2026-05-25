@@ -109,6 +109,11 @@ typical performance metrics (example system):
 ./build/aero-control-system-sim --seed 123 --wind 3.0 0.0 0.0 --gust-std 1.0 --gust-tau 2.0 --surface-tau 0.05 --surface-rate 3.0
 ```
 
+### run with custom hold targets
+```bash
+./build/aero-control-system-sim --target-alt 120 --target-heading-deg -45 --target-airspeed 20
+```
+
 ### benchmark throughput
 ```bash
 # single-threaded vs multi-threaded comparison

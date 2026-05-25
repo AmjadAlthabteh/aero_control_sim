@@ -1,11 +1,15 @@
 #include "acs/analysis/Statistics.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
+#include <string_view>
+#include <unordered_map>
 
 namespace acs::analysis {
 
@@ -47,19 +51,49 @@ void TimeSeriesStats::compute(const std::vector<double>& data, double dt) {
   }
 }
 
-std::vector<std::vector<double>> TelemetryAnalyzer::read_csv(const std::string& path) {
-  std::vector<std::vector<double>> data;
+static std::string trim_copy(std::string_view s) {
+  size_t b = 0;
+  while (b < s.size() && std::isspace(static_cast<unsigned char>(s[b]))) ++b;
+  size_t e = s.size();
+  while (e > b && std::isspace(static_cast<unsigned char>(s[e - 1]))) --e;
+  return std::string(s.substr(b, e - b));
+}
+
+static std::vector<std::string> split_csv_header(const std::string& line) {
+  std::vector<std::string> cols;
+  std::stringstream ss(line);
+  std::string token;
+  while (std::getline(ss, token, ',')) {
+    cols.push_back(trim_copy(token));
+  }
+  return cols;
+}
+
+bool TelemetryAnalyzer::read_csv(const std::string& path,
+                                std::vector<std::string>& header_out,
+                                std::vector<std::vector<double>>& data_out) {
+  header_out.clear();
+  data_out.clear();
+
   std::ifstream file(path);
   if (!file.is_open()) {
-    return data;
+    return false;
   }
 
   std::string line;
-  // Skip header
-  std::getline(file, line);
+  if (!std::getline(file, line)) {
+    return false;
+  }
+  header_out = split_csv_header(line);
+  if (header_out.empty()) {
+    return false;
+  }
 
   while (std::getline(file, line)) {
+    if (line.empty()) continue;
+
     std::vector<double> row;
+    row.reserve(header_out.size());
     std::stringstream ss(line);
     std::string value;
 
@@ -67,46 +101,97 @@ std::vector<std::vector<double>> TelemetryAnalyzer::read_csv(const std::string& 
       try {
         row.push_back(std::stod(value));
       } catch (...) {
-        row.push_back(0.0);
+        row.push_back(std::numeric_limits<double>::quiet_NaN());
       }
     }
-    if (!row.empty()) {
-      data.push_back(row);
+
+    if (row.empty()) continue;
+    if (row.size() < header_out.size()) {
+      row.resize(header_out.size(), std::numeric_limits<double>::quiet_NaN());
     }
+    data_out.push_back(std::move(row));
   }
 
-  return data;
+  return !data_out.empty();
 }
 
 TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::string& csv_path) {
   AnalysisReport report;
 
-  auto data = read_csv(csv_path);
-  if (data.empty()) {
+  std::vector<std::string> header;
+  std::vector<std::vector<double>> data;
+  if (!read_csv(csv_path, header, data)) {
     std::cerr << "Failed to read telemetry file: " << csv_path << "\n";
     return report;
   }
 
-  // Extract columns (based on telemetry format)
-  std::vector<double> roll, pitch, yaw, altitude, airspeed;
+  std::unordered_map<std::string, size_t> idx;
+  idx.reserve(header.size());
+  for (size_t i = 0; i < header.size(); ++i) {
+    if (!header[i].empty()) idx[header[i]] = i;
+  }
+
+  auto find_idx = [&](const char* name) -> size_t {
+    auto it = idx.find(name);
+    if (it == idx.end()) return static_cast<size_t>(-1);
+    return it->second;
+  };
+
+  const size_t i_t = find_idx("t_s");
+  const size_t i_roll = find_idx("roll_rad");
+  const size_t i_pitch = find_idx("pitch_rad");
+  const size_t i_yaw = find_idx("yaw_rad");
+  const size_t i_alt = find_idx("alt_m");
+  const size_t i_airspeed = find_idx("airspeed_mps");
+  const size_t i_aileron = find_idx("aileron_rad");
+  const size_t i_elevator = find_idx("elevator_rad");
+  const size_t i_rudder = find_idx("rudder_rad");
+  const size_t i_p = find_idx("p_rps");
+  const size_t i_q = find_idx("q_rps");
+  const size_t i_r = find_idx("r_rps");
+  const size_t i_target_alt = find_idx("target_alt_m");
+
+  std::vector<double> t_s, roll, pitch, yaw, altitude, airspeed;
   std::vector<double> aileron, elevator, rudder;
   std::vector<double> p, q, r;
 
-  for (const auto& row : data) {
-    if (row.size() < 20) continue;
+  auto get = [](const std::vector<double>& row, size_t i) -> double {
+    if (i == static_cast<size_t>(-1) || i >= row.size()) return std::numeric_limits<double>::quiet_NaN();
+    return row[i];
+  };
 
-    roll.push_back(row[10]);
-    pitch.push_back(row[11]);
-    yaw.push_back(row[12]);
-    altitude.push_back(row[13]);
-    airspeed.push_back(row[14]);
-    aileron.push_back(row[17]);
-    elevator.push_back(row[18]);
-    rudder.push_back(row[19]);
-    p.push_back(row[7]);
-    q.push_back(row[8]);
-    r.push_back(row[9]);
+  double target_altitude_m = report.target_altitude_m;
+  bool target_alt_from_telemetry = false;
+
+  for (const auto& row : data) {
+    const double alt = get(row, i_alt);
+    const double ts = get(row, i_t);
+
+    if (std::isfinite(get(row, i_roll))) roll.push_back(get(row, i_roll));
+    if (std::isfinite(get(row, i_pitch))) pitch.push_back(get(row, i_pitch));
+    if (std::isfinite(get(row, i_yaw))) yaw.push_back(get(row, i_yaw));
+    if (std::isfinite(get(row, i_airspeed))) airspeed.push_back(get(row, i_airspeed));
+    if (std::isfinite(get(row, i_aileron))) aileron.push_back(get(row, i_aileron));
+    if (std::isfinite(get(row, i_elevator))) elevator.push_back(get(row, i_elevator));
+    if (std::isfinite(get(row, i_rudder))) rudder.push_back(get(row, i_rudder));
+    if (std::isfinite(get(row, i_p))) p.push_back(get(row, i_p));
+    if (std::isfinite(get(row, i_q))) q.push_back(get(row, i_q));
+    if (std::isfinite(get(row, i_r))) r.push_back(get(row, i_r));
+
+    if (std::isfinite(ts) && std::isfinite(alt)) {
+      t_s.push_back(ts);
+      altitude.push_back(alt);
+    }
+
+    const double tgt = get(row, i_target_alt);
+    if (!target_alt_from_telemetry && std::isfinite(tgt)) {
+      target_altitude_m = tgt;
+      target_alt_from_telemetry = true;
+    }
   }
+
+  report.target_altitude_m = target_altitude_m;
+  report.target_altitude_from_telemetry = target_alt_from_telemetry;
 
   // Compute statistics
   report.roll_rad.compute(roll);
@@ -122,13 +207,15 @@ TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::stri
   report.yaw_rate_rad_s.compute(r);
 
   // Stability check - check if any values are diverging
-  const double max_altitude = 200.0;  // meters
-  const double max_attitude = 1.57;    // ~90 degrees
+  const double max_altitude = std::max(200.0, std::abs(target_altitude_m) * 5.0);  // meters
+  const double max_attitude = 1.57;  // ~90 degrees
+  const double max_abs_roll = std::max(std::abs(report.roll_rad.max), std::abs(report.roll_rad.min));
+  const double max_abs_pitch = std::max(std::abs(report.pitch_rad.max), std::abs(report.pitch_rad.min));
   report.is_stable = (report.altitude_m.max < max_altitude) &&
-                    (std::abs(report.roll_rad.max) < max_attitude) &&
-                    (std::abs(report.pitch_rad.max) < max_attitude);
+                     (max_abs_roll < max_attitude) &&
+                     (max_abs_pitch < max_attitude);
 
-  // Compute steady state error for altitude (last 10% of data)
+  // Control performance metrics for altitude (based on last 10% for steady-state)
   if (!altitude.empty()) {
     size_t steady_start = altitude.size() * 9 / 10;
     double sum = 0.0;
@@ -136,7 +223,39 @@ TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::stri
       sum += altitude[i];
     }
     double steady_altitude = sum / (altitude.size() - steady_start);
-    report.steady_state_error = std::abs(steady_altitude - 60.0);  // Target is 60m
+    report.steady_state_error = std::abs(steady_altitude - target_altitude_m);
+
+    // Overshoot percent (relative to step size when available)
+    const double y0 = altitude.front();
+    const double step = target_altitude_m - y0;
+    const double denom = std::max(1e-6, std::abs(step));
+    double overshoot = 0.0;
+    if (step >= 0.0) {
+      overshoot = std::max(0.0, report.altitude_m.max - target_altitude_m);
+    } else {
+      overshoot = std::max(0.0, target_altitude_m - report.altitude_m.min);
+    }
+    report.max_overshoot_pct = 100.0 * (overshoot / denom);
+
+    // Settling time: time after which altitude stays within a tolerance band
+    if (t_s.size() == altitude.size() && t_s.size() >= 2) {
+      const double tol_m = std::max(0.5, 0.02 * std::abs(step));
+      size_t last_out_of_band = 0;
+      bool any_out = false;
+      for (size_t i = 0; i < altitude.size(); ++i) {
+        if (std::abs(altitude[i] - target_altitude_m) > tol_m) {
+          last_out_of_band = i;
+          any_out = true;
+        }
+      }
+      if (!any_out) {
+        report.settling_time_s = 0.0;
+      } else if (last_out_of_band + 1 < t_s.size()) {
+        report.settling_time_s = t_s[last_out_of_band + 1];
+      } else {
+        report.settling_time_s = std::numeric_limits<double>::quiet_NaN();
+      }
+    }
   }
 
   return report;
@@ -172,8 +291,19 @@ void TelemetryAnalyzer::print_report(const AnalysisReport& report) {
   std::cout << "Performance Metrics:\n";
   std::cout << "-------------------\n";
   std::cout << "Stability: " << (report.is_stable ? "STABLE" : "UNSTABLE") << "\n";
+  std::cout << "Altitude Target: " << std::fixed << std::setprecision(3)
+            << report.target_altitude_m << " m"
+            << (report.target_altitude_from_telemetry ? " (from telemetry)" : "") << "\n";
   std::cout << "Steady State Error: " << std::fixed << std::setprecision(3)
             << report.steady_state_error << " m\n";
+  std::cout << "Max Overshoot: " << std::fixed << std::setprecision(2)
+            << report.max_overshoot_pct << " %\n";
+  if (std::isfinite(report.settling_time_s)) {
+    std::cout << "Settling Time: " << std::fixed << std::setprecision(3)
+              << report.settling_time_s << " s\n";
+  } else {
+    std::cout << "Settling Time: N/A\n";
+  }
 
   std::cout << "\n=================================\n\n";
 }
