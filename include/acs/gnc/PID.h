@@ -9,6 +9,7 @@ public:
     double ki{};
     double kd{};
     double kaw{1.0};  // anti-windup gain (back-calculation)
+    double tau_d{0.0};  // derivative filter time constant (0 = no filter)
   };
 
   PID() = default;
@@ -27,6 +28,7 @@ private:
   double out_limit_{};
   double integrator_{};
   double prev_measurement_{};
+  double d_filtered_{};  // filtered derivative term
   bool has_prev_{false};
 };
 

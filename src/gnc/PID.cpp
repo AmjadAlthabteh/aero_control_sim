@@ -20,6 +20,7 @@ void PID::set_limits(double i_limit, double out_limit) {
 void PID::reset() {
   integrator_ = 0.0;
   prev_measurement_ = 0.0;
+  d_filtered_ = 0.0;
   has_prev_ = false;
 }
 
@@ -30,6 +31,13 @@ double PID::update(double setpoint, double measurement, double dt_s) {
   double d_meas = 0.0;
   if (has_prev_ && dt_s > 0.0) {
     d_meas = (measurement - prev_measurement_) / dt_s;
+
+    // optional first-order low-pass filter on derivative term
+    if (gains_.tau_d > 0.0) {
+      const double alpha = dt_s / (gains_.tau_d + dt_s);
+      d_filtered_ = (1.0 - alpha) * d_filtered_ + alpha * d_meas;
+      d_meas = d_filtered_;
+    }
   }
   prev_measurement_ = measurement;
   has_prev_ = true;
