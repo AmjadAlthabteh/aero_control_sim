@@ -70,10 +70,12 @@ Quaternion Quaternion::operator*(const Quaternion& o) const {
 }
 
 Vector3 Quaternion::rotate(const Vector3& v) const {
-  // v' = q * [0,v] * q_conj
-  const Quaternion qv(0.0, v.x, v.y, v.z);
-  const Quaternion r = (*this) * qv * this->conjugate();
-  return Vector3(r.x, r.y, r.z);
+  // v' = q * [0,v] * q_conj, implemented without building temporary quaternions.
+  // t = 2 * (q_xyz x v)
+  // v' = v + w * t + (q_xyz x t)
+  const Vector3 q_xyz(x, y, z);
+  const Vector3 t = 2.0 * Vector3::cross(q_xyz, v);
+  return v + (w * t) + Vector3::cross(q_xyz, t);
 }
 
 Matrix3 Quaternion::to_dcm() const {
@@ -122,4 +124,3 @@ Vector3 Quaternion::to_euler321() const {
 }
 
 }  // namespace acs::math
-

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iomanip>
+#include <memory>
 #include <sstream>
 
 #include "acs/math/Constants.h"
@@ -46,9 +47,10 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
     auto& profiler = acs::profiling::PerformanceProfiler::instance();
     profiler.reset();
   }
-  Telemetry log(enable_telemetry ? telemetry_path : "temp.csv");
+  std::unique_ptr<Telemetry> log;
   if (enable_telemetry) {
-    log.write_header();
+    log = std::make_unique<Telemetry>(telemetry_path);
+    log->write_header();
   }
 
   controller_.reset();
@@ -61,6 +63,8 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
 
   const int steps = static_cast<int>(std::ceil(sim_cfg_.sim_time_s / sim_cfg_.dt_s));
   double t = 0.0;
+  std::ostringstream row;
+  row << std::fixed << std::setprecision(6);
 
   for (int i = 0; i < steps; ++i) {
     if (enable_profiling) {
@@ -163,32 +167,35 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
     u_applied = u_hold;
 
     // log telemetry using forces/moments at the updated state (purely for nicer plots).
-    const Matrix3 c_nb_log = x.q_nb.to_dcm();
-    const Matrix3 c_bn_log = c_nb_log.transposed();
-    const Vector3 wind_b_log = c_bn_log * wind_n;
-    const Vector3 v_air_b_log = x.velocity_body_m_s - wind_b_log;
-    const auto aero_eval = aircraft_.aero_model().evaluate(v_air_b_log, x.omega_body_rad_s, atm.rho_kg_m3, u_hold);
-    const Vector3 eul = x.q_nb.to_euler321();
-
-    std::ostringstream row;
-    row << std::fixed << std::setprecision(6);
-    row << t << ",";
-    row << x.position_ned_m.x << "," << x.position_ned_m.y << "," << x.position_ned_m.z << ",";
-    row << x.velocity_body_m_s.x << "," << x.velocity_body_m_s.y << "," << x.velocity_body_m_s.z << ",";
-    row << x.omega_body_rad_s.x << "," << x.omega_body_rad_s.y << "," << x.omega_body_rad_s.z << ",";
-    row << eul.x << "," << eul.y << "," << eul.z << ",";
-    row << (-x.position_ned_m.z) << "," << aero_eval.airspeed_m_s << "," << aero_eval.alpha_rad << "," << aero_eval.beta_rad << ",";
-    row << u_hold.aileron_rad << "," << u_hold.elevator_rad << "," << u_hold.rudder_rad << "," << u_hold.throttle_01 << ",";
-    row << aero_eval.force_body_n.x << "," << aero_eval.force_body_n.y << "," << aero_eval.force_body_n.z << ",";
-    row << aero_eval.moment_body_n_m.x << "," << aero_eval.moment_body_n_m.y << "," << aero_eval.moment_body_n_m.z << ",";
-    row << wind_n.x << "," << wind_n.y << "," << wind_n.z << ",";
-    row << v_air_b_log.x << "," << v_air_b_log.y << "," << v_air_b_log.z << ",";
-    row << u_cmd.aileron_rad << "," << u_cmd.elevator_rad << "," << u_cmd.rudder_rad << "," << u_cmd.throttle_01 << ",";
-    row << (baro.valid ? 1 : 0) << "," << (gps.valid ? 1 : 0) << ",";
-    row << targets.altitude_m << "," << targets.heading_rad << "," << targets.airspeed_m_s << "," << targets.roll_rad << ","
-        << targets.pitch_rad;
     if (enable_telemetry) {
-      log.write_row(row.str());
+      const Matrix3 c_nb_log = x.q_nb.to_dcm();
+      const Matrix3 c_bn_log = c_nb_log.transposed();
+      const Vector3 wind_b_log = c_bn_log * wind_n;
+      const Vector3 v_air_b_log = x.velocity_body_m_s - wind_b_log;
+      const auto atm_log = acs::physics::Atmosphere::at_altitude(-x.position_ned_m.z);
+      const auto aero_eval =
+          aircraft_.aero_model().evaluate(v_air_b_log, x.omega_body_rad_s, atm_log.rho_kg_m3, u_hold);
+      const Vector3 eul = x.q_nb.to_euler321();
+
+      row.str(std::string{});
+      row.clear();
+      row << t << ",";
+      row << x.position_ned_m.x << "," << x.position_ned_m.y << "," << x.position_ned_m.z << ",";
+      row << x.velocity_body_m_s.x << "," << x.velocity_body_m_s.y << "," << x.velocity_body_m_s.z << ",";
+      row << x.omega_body_rad_s.x << "," << x.omega_body_rad_s.y << "," << x.omega_body_rad_s.z << ",";
+      row << eul.x << "," << eul.y << "," << eul.z << ",";
+      row << (-x.position_ned_m.z) << "," << aero_eval.airspeed_m_s << "," << aero_eval.alpha_rad << "," << aero_eval.beta_rad
+          << ",";
+      row << u_hold.aileron_rad << "," << u_hold.elevator_rad << "," << u_hold.rudder_rad << "," << u_hold.throttle_01 << ",";
+      row << aero_eval.force_body_n.x << "," << aero_eval.force_body_n.y << "," << aero_eval.force_body_n.z << ",";
+      row << aero_eval.moment_body_n_m.x << "," << aero_eval.moment_body_n_m.y << "," << aero_eval.moment_body_n_m.z << ",";
+      row << wind_n.x << "," << wind_n.y << "," << wind_n.z << ",";
+      row << v_air_b_log.x << "," << v_air_b_log.y << "," << v_air_b_log.z << ",";
+      row << u_cmd.aileron_rad << "," << u_cmd.elevator_rad << "," << u_cmd.rudder_rad << "," << u_cmd.throttle_01 << ",";
+      row << (baro.valid ? 1 : 0) << "," << (gps.valid ? 1 : 0) << ",";
+      row << targets.altitude_m << "," << targets.heading_rad << "," << targets.airspeed_m_s << "," << targets.roll_rad << ","
+          << targets.pitch_rad;
+      log->write_row(row.str());
     }
 
     t += sim_cfg_.dt_s;
