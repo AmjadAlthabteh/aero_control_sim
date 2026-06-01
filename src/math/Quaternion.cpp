@@ -30,7 +30,7 @@ double Quaternion::norm() const { return std::sqrt(w * w + x * x + y * y + z * z
 
 Quaternion Quaternion::normalized() const {
   const double n = norm();
-  if (n <= 0.0) {
+  if (!std::isfinite(n) || n <= 0.0) {
     return Quaternion::identity();
   }
   return Quaternion(w / n, x / n, y / n, z / n);
@@ -41,6 +41,11 @@ void Quaternion::normalize_in_place() {
   // this avoids expensive sqrt when quaternion is already nearly normalized
   constexpr double kNormThreshold = 1e-6;
   const double norm_sq = w * w + x * x + y * y + z * z;
+  if (!std::isfinite(norm_sq)) {
+    w = 1.0;
+    x = y = z = 0.0;
+    return;
+  }
   const double norm_error = std::abs(norm_sq - 1.0);
 
   if (norm_error < kNormThreshold) {
@@ -48,7 +53,7 @@ void Quaternion::normalize_in_place() {
   }
 
   const double n = std::sqrt(norm_sq);
-  if (n <= 0.0) {
+  if (!std::isfinite(n) || n <= 0.0) {
     w = 1.0;
     x = y = z = 0.0;
     return;

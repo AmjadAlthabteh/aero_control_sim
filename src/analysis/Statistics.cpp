@@ -16,22 +16,33 @@ namespace acs::analysis {
 void TimeSeriesStats::compute(const std::vector<double>& data, double dt) {
   value_stats.compute(data);
 
+  rate_of_change_max = 0.0;
+  rate_of_change_avg = 0.0;
+  num_zero_crossings = 0;
+  num_peaks = 0;
+  num_valleys = 0;
+
   if (data.size() < 2) return;
 
   // Compute rate of change
-  std::vector<double> rates;
-  rates.reserve(data.size() - 1);
-  double rate_sum = 0.0;
-  for (size_t i = 1; i < data.size(); ++i) {
-    double rate = std::abs((data[i] - data[i - 1]) / dt);
-    rates.push_back(rate);
-    rate_sum += rate;
+  const bool dt_ok = std::isfinite(dt) && dt > 0.0;
+  if (dt_ok) {
+    std::vector<double> rates;
+    rates.reserve(data.size() - 1);
+    double rate_sum = 0.0;
+    for (size_t i = 1; i < data.size(); ++i) {
+      const double rate = std::abs((data[i] - data[i - 1]) / dt);
+      rates.push_back(rate);
+      rate_sum += rate;
+    }
+    rate_of_change_max = *std::max_element(rates.begin(), rates.end());
+    rate_of_change_avg = rate_sum / rates.size();
+  } else {
+    rate_of_change_max = std::numeric_limits<double>::quiet_NaN();
+    rate_of_change_avg = std::numeric_limits<double>::quiet_NaN();
   }
-  rate_of_change_max = *std::max_element(rates.begin(), rates.end());
-  rate_of_change_avg = rate_sum / rates.size();
 
   // Count zero crossings
-  num_zero_crossings = 0;
   for (size_t i = 1; i < data.size(); ++i) {
     if ((data[i - 1] < 0.0 && data[i] >= 0.0) ||
         (data[i - 1] > 0.0 && data[i] <= 0.0)) {
@@ -40,8 +51,6 @@ void TimeSeriesStats::compute(const std::vector<double>& data, double dt) {
   }
 
   // Count peaks and valleys
-  num_peaks = 0;
-  num_valleys = 0;
   for (size_t i = 1; i < data.size() - 1; ++i) {
     if (data[i] > data[i - 1] && data[i] > data[i + 1]) {
       num_peaks++;
@@ -346,6 +355,7 @@ std::vector<double> moving_average(const std::vector<double>& data, size_t windo
 std::vector<double> differentiate(const std::vector<double>& data, double dt) {
   std::vector<double> result;
   if (data.size() < 2) return result;
+  if (!std::isfinite(dt) || dt == 0.0) return result;
 
   result.reserve(data.size() - 1);
   for (size_t i = 1; i < data.size(); ++i) {

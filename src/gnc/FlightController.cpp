@@ -12,8 +12,10 @@ static double clamp(double x, double lo, double hi) { return std::max(lo, std::m
 static double wrap_pi(double a) {
   using acs::math::kPi;
   using acs::math::kTwoPi;
-  while (a > kPi) a -= kTwoPi;
-  while (a < -kPi) a += kTwoPi;
+  if (!std::isfinite(a)) return 0.0;
+  a = std::remainder(a, kTwoPi);
+  if (a <= -kPi) a += kTwoPi;
+  if (a > kPi) a -= kTwoPi;
   return a;
 }
 

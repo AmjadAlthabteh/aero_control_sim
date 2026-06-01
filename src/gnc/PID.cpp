@@ -26,10 +26,11 @@ void PID::reset() {
 
 double PID::update(double setpoint, double measurement, double dt_s) {
   const double error = setpoint - measurement;
+  const bool dt_ok = std::isfinite(dt_s) && dt_s > 0.0;
 
   // derivative on measurement (prevents derivative kick on setpoint changes)
   double d_meas = 0.0;
-  if (has_prev_ && dt_s > 0.0) {
+  if (has_prev_ && dt_ok) {
     d_meas = (measurement - prev_measurement_) / dt_s;
 
     // optional first-order low-pass filter on derivative term
@@ -46,6 +47,10 @@ double PID::update(double setpoint, double measurement, double dt_s) {
   const double u_unsat = gains_.kp * error + gains_.ki * integrator_ - gains_.kd * d_meas;
   const double u = clamp(u_unsat, -out_limit_, out_limit_);
 
+  if (!dt_ok) {
+    return u;
+  }
+
   // back-calculation anti-windup: reduce integrator based on saturation error
   const double u_sat_error = u - u_unsat;
   integrator_ += (error + gains_.kaw * u_sat_error) * dt_s;
@@ -55,4 +60,3 @@ double PID::update(double setpoint, double measurement, double dt_s) {
 }
 
 }  // namespace acs::gnc
-
