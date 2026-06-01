@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <string>
 
 #include "acs/gnc/FlightController.h"
@@ -54,6 +55,10 @@ static bool parse_double(const char* s, double& out, const char* param_name) {
 static bool parse_uint(const char* s, unsigned int& out, const char* param_name) {
   try {
     const auto v = std::stoul(s);
+    if (v > static_cast<unsigned long>(std::numeric_limits<unsigned int>::max())) {
+      std::cerr << "Error: Value '" << s << "' for parameter " << param_name << " is out of range\n";
+      return false;
+    }
     out = static_cast<unsigned int>(v);
     return true;
   } catch (...) {
