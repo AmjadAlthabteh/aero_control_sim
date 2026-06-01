@@ -334,6 +334,7 @@ double compute_peak_to_peak(const std::vector<double>& data) {
 
 std::vector<double> moving_average(const std::vector<double>& data, size_t window_size) {
   std::vector<double> result;
+  if (window_size == 0) return result;
   if (data.size() < window_size) return result;
 
   result.reserve(data.size() - window_size + 1);
@@ -355,7 +356,7 @@ std::vector<double> moving_average(const std::vector<double>& data, size_t windo
 std::vector<double> differentiate(const std::vector<double>& data, double dt) {
   std::vector<double> result;
   if (data.size() < 2) return result;
-  if (!std::isfinite(dt) || dt == 0.0) return result;
+  if (!std::isfinite(dt) || dt <= 0.0) return result;
 
   result.reserve(data.size() - 1);
   for (size_t i = 1; i < data.size(); ++i) {
