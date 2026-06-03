@@ -27,11 +27,12 @@ AtmosphereState Atmosphere::at_altitude(double altitude_m) {
     // simple exponential extension above the tropopause.
     s.temperature_k = t0 - lapse * 11000.0;
     const double p11 = p0 * std::pow(s.temperature_k / t0, g0 / (r_air * lapse));
-    const double rho11 = p11 / (r_air * s.temperature_k);
-    const double hscale = 7000.0;
     const double dh = h - 11000.0;
-    s.rho_kg_m3 = rho11 * std::exp(-dh / hscale);
-    s.pressure_pa = s.rho_kg_m3 * r_air * s.temperature_k;
+    // Exact ISA isothermal stratosphere: scale height H = R*T/g0 (~6339 m).
+    // Derive pressure first, then density via ideal gas — not the reverse.
+    const double hscale = r_air * s.temperature_k / g0;
+    s.pressure_pa = p11 * std::exp(-dh / hscale);
+    s.rho_kg_m3 = s.pressure_pa / (r_air * s.temperature_k);
   }
 
   s.speed_of_sound_m_s = std::sqrt(gamma * r_air * s.temperature_k);
