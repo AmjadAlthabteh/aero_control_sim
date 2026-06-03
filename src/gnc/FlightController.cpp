@@ -47,6 +47,22 @@ acs::aero::ControlInputs FlightController::update(const ControllerTargets& targe
   const double alt_err = targets.altitude_m - est.altitude_m;
   const double pitch_cmd = clamp(targets.pitch_rad + altitude_pid_.update(0.0, -alt_err, dt_s), -0.35, 0.35);
 
+  // Gain scheduling: scale kp/kd by (V_ref/V)^2 so control authority stays consistent across
+  // airspeeds — aerodynamic effectiveness scales with V^2, so gains must invert that factor.
+  static constexpr double kVref_m_s = 15.0;
+  const double v_safe = std::max(5.0, est.airspeed_m_s);
+  const double gs = clamp((kVref_m_s / v_safe) * (kVref_m_s / v_safe), 0.25, 4.0);
+
+  PID::Gains scaled_roll = cfg_.roll_gains;
+  scaled_roll.kp *= gs;
+  scaled_roll.kd *= gs;
+  roll_pid_.set_gains(scaled_roll);
+
+  PID::Gains scaled_pitch = cfg_.pitch_gains;
+  scaled_pitch.kp *= gs;
+  scaled_pitch.kd *= gs;
+  pitch_pid_.set_gains(scaled_pitch);
+
   const double aileron = roll_pid_.update(roll_cmd, est.roll_rad, dt_s);
   const double elevator = pitch_pid_.update(pitch_cmd, est.pitch_rad, dt_s);
 
