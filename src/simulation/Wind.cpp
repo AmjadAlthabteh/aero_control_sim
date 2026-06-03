@@ -38,9 +38,13 @@ acs::math::Vector3 WindModel::update(double dt_s) {
     return wind_ned_m_s();
   }
 
+  // Vertical gusts are weaker than horizontal near the ground; ratio 0.6 matches
+  // the low-altitude Dryden turbulence spectrum (MIL-HDBK-1797 §2.6).
+  static constexpr double kVerticalGustFactor = 0.6;
+
   gust_ned_m_s_.x = a * gust_ned_m_s_.x + noise_.gaussian(0.0, sigma);
   gust_ned_m_s_.y = a * gust_ned_m_s_.y + noise_.gaussian(0.0, sigma);
-  gust_ned_m_s_.z = a * gust_ned_m_s_.z + noise_.gaussian(0.0, sigma);
+  gust_ned_m_s_.z = a * gust_ned_m_s_.z + noise_.gaussian(0.0, sigma * kVerticalGustFactor);
 
   return wind_ned_m_s();
 }
