@@ -57,10 +57,13 @@ GpsSample Sensors::gps(const acs::math::Vector3& position_ned_m, const acs::math
     return s;
   }
 
+  // Vertical GPS accuracy is ~1.5x worse than horizontal due to satellite geometry (VDOP > HDOP).
+  static constexpr double kVdopFactor = 1.5;
+
   GpsSample s{};
   s.position_ned_m = acs::math::Vector3(position_ned_m.x + noise_.gaussian(0.0, cfg_.gps_pos_noise_std_m),
                                        position_ned_m.y + noise_.gaussian(0.0, cfg_.gps_pos_noise_std_m),
-                                       position_ned_m.z + noise_.gaussian(0.0, cfg_.gps_pos_noise_std_m));
+                                       position_ned_m.z + noise_.gaussian(0.0, cfg_.gps_pos_noise_std_m * kVdopFactor));
   s.velocity_ned_m_s = acs::math::Vector3(velocity_ned_m_s.x + noise_.gaussian(0.0, cfg_.gps_vel_noise_std_m_s),
                                          velocity_ned_m_s.y + noise_.gaussian(0.0, cfg_.gps_vel_noise_std_m_s),
                                          velocity_ned_m_s.z + noise_.gaussian(0.0, cfg_.gps_vel_noise_std_m_s));
