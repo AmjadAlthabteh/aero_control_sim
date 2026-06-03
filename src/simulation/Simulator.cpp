@@ -24,6 +24,90 @@ Simulator::Simulator(const SimulatorConfig& sim_cfg,
       wind_(sim_cfg.wind, sim_cfg.seed + 1U),
       actuators_(sim_cfg.actuators, sim_cfg.actuator_faults) {}
 
+// =============================================================================
+// Complementary Filter AHRS
+//
+// A complementary filter splits attitude estimation between two sensors whose
+// noise properties are complementary:
+//
+//   Gyroscope   — low noise, high bandwidth, but integrator drift grows as √t.
+//   Accelerometer — high noise, but its time-averaged direction is always gravity,
+//                   so it is drift-free in the long run.
+//
+// The filter is a first-order IIR with a single cross-over frequency 1/τ:
+//
+//   φ_next = α · (φ_prev + ω_body · dt)  +  (1 − α) · φ_accel
+//          │                             │
+//          └── gyro high-pass ───────────┴── accel low-pass
+//
+// where α = τ / (τ + dt)  (Tustin bilinear discretisation).
+//
+// With τ = 0.5 s the crossover is 0.32 Hz.  The gyro handles all dynamic
+// manoeuvres; the accelerometer slowly corrects any accumulating gyro bias.
+//
+// Yaw is gyro-only because the accelerometer cannot sense rotation about the
+// gravity vector (a magnetometer or GPS course would be needed to correct yaw
+// drift, but neither is fused here).
+//
+// Accelerometer roll/pitch derivation (FRD body frame, g_ned = [0,0,g]):
+//   Specific force ≈ −g_body during quasi-static flight, and g_body is:
+//     g_bx = −g sin θ
+//     g_by =  g cos θ sin φ
+//     g_bz =  g cos θ cos φ
+//   so specific force components are  fx = g sinθ,  fy = −g cosθ sinφ,
+//   fz = −g cosθ cosφ.  Inverting:
+//     φ = atan2(−fy, −fz)              (roll)
+//     θ = atan2(fx,  √(fy² + fz²))    (pitch)
+//
+// The accelerometer blend is gated off when |a| is more than 50 % away from g,
+// i.e. during hard manoeuvres where inertial acceleration dominates over
+// gravity and the accel-derived angles would be wrong.
+// =============================================================================
+
+struct AhrsState {
+  double roll_rad{};
+  double pitch_rad{};
+  double yaw_rad{};
+};
+
+static AhrsState ahrs_update(const AhrsState& prev, const ImuSample& imu, double dt_s) {
+  constexpr double kTau_s       = 0.5;   // complementary filter time constant (seconds)
+  constexpr double kG_lo        = 4.9;   // 0.5 g  — lower accel trust gate (m/s²)
+  constexpr double kG_hi        = 14.7;  // 1.5 g  — upper accel trust gate (m/s²)
+
+  const double alpha = kTau_s / (kTau_s + dt_s);
+
+  // --- Gyro propagation -------------------------------------------------------
+  // Body rates (p, q, r) are not exactly Euler rates except at zero pitch/yaw.
+  // For the small-angle / low-pitch regime typical of fixed-wing UAVs the
+  // approximation φ̇ ≈ p,  θ̇ ≈ q,  ψ̇ ≈ r is accurate to a few percent.
+  const double roll_gyro  = prev.roll_rad  + imu.gyro_body_rad_s.x * dt_s;
+  const double pitch_gyro = prev.pitch_rad + imu.gyro_body_rad_s.y * dt_s;
+  const double yaw_gyro   = prev.yaw_rad   + imu.gyro_body_rad_s.z * dt_s;
+
+  // --- Accelerometer-derived roll and pitch -----------------------------------
+  const double ax = imu.accel_body_m_s2.x;
+  const double ay = imu.accel_body_m_s2.y;
+  const double az = imu.accel_body_m_s2.z;
+  const double accel_norm = std::sqrt(ax * ax + ay * ay + az * az);
+
+  AhrsState out{};
+  out.yaw_rad = yaw_gyro;  // yaw is always gyro-only
+
+  if (accel_norm > kG_lo && accel_norm < kG_hi) {
+    // Accelerometer is plausibly sensing gravity — blend it in.
+    const double roll_accel  = std::atan2(-ay, -az);
+    const double pitch_accel = std::atan2(ax, std::sqrt(ay * ay + az * az));
+    out.roll_rad  = alpha * roll_gyro  + (1.0 - alpha) * roll_accel;
+    out.pitch_rad = alpha * pitch_gyro + (1.0 - alpha) * pitch_accel;
+  } else {
+    // Hard manoeuvre — inertial acceleration swamps gravity; trust gyro only.
+    out.roll_rad  = roll_gyro;
+    out.pitch_rad = pitch_gyro;
+  }
+  return out;
+}
+
 static acs::physics::RigidBodyState make_initial_state() {
   using acs::math::kDeg2Rad;
   acs::physics::RigidBodyState x{};
@@ -60,6 +144,11 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
   RigidBodyState x = make_initial_state();
   acs::aero::ControlInputs u_applied{};
   u_applied.throttle_01 = 0.55;
+
+  // Seed the AHRS from the truth Euler angles so the filter starts converged.
+  // In a real system this would come from an alignment procedure.
+  const Vector3 eul_init = x.q_nb.to_euler321();
+  AhrsState ahrs{eul_init.x, eul_init.y, eul_init.z};
 
   const int steps = static_cast<int>(std::ceil(sim_cfg_.sim_time_s / sim_cfg_.dt_s));
   double t = 0.0;
@@ -104,20 +193,27 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
         profiler.end_section("sensors");
       }
 
-      // use "perfect" attitude for now (like a fused ahrs), but still take yaw rate from the gyro.
-      // this keeps the demo stable while still exercising the sensor code paths.
+      // Feed the IMU with the aero-derived specific force so the accelerometer
+      // sees realistic inertial loading (thrust, lift, drag) rather than just gravity.
       const auto aero_for_imu = aircraft_.aero_model().evaluate(v_air_b, x.omega_body_rad_s, atm.rho_kg_m3, u_applied);
       const Vector3 specific_force = (1.0 / aircraft_.rigid_body().params().mass_kg) * aero_for_imu.force_body_n;
       const auto imu = sensors_.imu(specific_force, x.omega_body_rad_s, sim_cfg_.dt_s);
 
+      // Run the complementary filter AHRS.  The estimated attitude now comes
+      // from sensor fusion rather than truth state, so gyro bias and accel
+      // noise from the sensor model feed through to the controller — the
+      // simulation exercises a realistic closed-loop sensing chain.
+      ahrs = ahrs_update(ahrs, imu, sim_cfg_.dt_s);
+      (void)eul;   // truth euler kept for reference; AHRS drives control
+
       acs::gnc::EstimatedState est{};
-      est.roll_rad = eul.x;
-      est.pitch_rad = eul.y;
-      est.yaw_rad = eul.z;
+      est.roll_rad  = ahrs.roll_rad;
+      est.pitch_rad = ahrs.pitch_rad;
+      est.yaw_rad   = ahrs.yaw_rad;
       (void)gps;
 
-      est.altitude_m = baro.altitude_m;
-      est.airspeed_m_s = airspeed;
+      est.altitude_m     = baro.altitude_m;
+      est.airspeed_m_s   = airspeed;
       est.yaw_rate_rad_s = imu.gyro_body_rad_s.z;
 
       if (enable_profiling) {
