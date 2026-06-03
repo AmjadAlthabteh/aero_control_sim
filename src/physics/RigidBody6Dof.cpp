@@ -32,17 +32,17 @@ RigidBodyState RigidBody6Dof::derivative(const RigidBodyState& x,
   using acs::math::Matrix3;
   using acs::math::Vector3;
 
-  const Matrix3 c_nb = x.q_nb.to_dcm();        // body -> nav
-  const Matrix3 c_bn = c_nb.transposed();      // nav -> body
-
   const Vector3 v_b = x.velocity_body_m_s;
   const Vector3 w_b = x.omega_body_rad_s;
 
-  // translational kinematics: p_dot = v_nav = c_nb * v_body
-  const Vector3 p_dot_n = c_nb * v_b;
-
-  // gravity in body frame
-  const Vector3 g_b = c_bn * gravity_ned_m_s2;
+  // Rotate vectors between frames directly via the quaternion rather than building the
+  // full 3x3 DCM.  The two identities used are:
+  //   q.rotate(v)             ≡  C_nb * v   (body → nav, ~18 flops)
+  //   q.conjugate().rotate(v) ≡  C_bn * v   (nav → body, C_bn = C_nb^{-1})
+  // versus to_dcm() + matrix-vector multiply which costs ~35 flops per rotation.
+  // This function is called four times per RK4 step, so the saving compounds quickly.
+  const Vector3 p_dot_n = x.q_nb.rotate(v_b);
+  const Vector3 g_b     = x.q_nb.conjugate().rotate(gravity_ned_m_s2);
 
   // newton in body frame:
   // m * v_dot + omega x (m*v) = F_b + m*g_b
