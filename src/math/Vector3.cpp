@@ -15,7 +15,11 @@ double Vector3::norm() const { return std::sqrt(norm_squared()); }
 
 Vector3 Vector3::normalized() const {
   const double n = norm();
-  if (n <= 0.0) {
+  // Guard against both zero-length vectors and NaN/inf that can arise from
+  // upstream numerical problems (division by near-zero speed, etc.).
+  // Without the isfinite check, norm() returning NaN satisfies n > 0 and the
+  // division propagates NaN silently into every system that uses the result.
+  if (!std::isfinite(n) || n <= 0.0) {
     return Vector3{};
   }
   return (*this) / n;
