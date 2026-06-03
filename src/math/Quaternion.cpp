@@ -106,10 +106,28 @@ Matrix3 Quaternion::to_dcm() const {
 }
 
 Quaternion Quaternion::derivative_from_body_rates(const Vector3& omega_body_rad_s) const {
-  // q_dot = 1/2 * q ⊗ [0, p, q, r]
-  const Quaternion wq(0.0, omega_body_rad_s.x, omega_body_rad_s.y, omega_body_rad_s.z);
-  const Quaternion qdot = (*this) * wq;
-  return Quaternion(0.5 * qdot.w, 0.5 * qdot.x, 0.5 * qdot.y, 0.5 * qdot.z);
+  // q_dot = (1/2) q ⊗ Ω   where  Ω = [0, p, q, r]  (pure quaternion of body rates)
+  //
+  // Expanding the Hamilton product against a pure quaternion (zero scalar part)
+  // analytically eliminates the four multiplications by Ω.w = 0 and removes
+  // the temporary Quaternion object.  This function is called four times per
+  // RK4 step, so keeping it lean matters.
+  //
+  // Derivation — Hamilton product (w,x,y,z) ⊗ (0,p,q,r):
+  //   result.w =  0·w − p·x − q·y − r·z  =  −(x·p + y·q + z·r)
+  //   result.x =  p·w + 0·x + r·y − q·z  =    w·p − z·q + y·r
+  //   result.y =  q·w − r·x + 0·y + p·z  =    z·p + w·q − x·r
+  //   result.z =  r·w + q·x − p·y + 0·z  =  −(y·p − x·q − w·r)
+  //
+  // (p, q, r = roll, pitch, yaw body rates in standard flight-dynamics notation)
+  const double p = omega_body_rad_s.x;
+  const double q = omega_body_rad_s.y;
+  const double r = omega_body_rad_s.z;
+  return Quaternion(
+      0.5 * (-x * p - y * q - z * r),   // w
+      0.5 * ( w * p - z * q + y * r),   // x
+      0.5 * ( z * p + w * q - x * r),   // y
+      0.5 * (-y * p + x * q + w * r));  // z
 }
 
 Vector3 Quaternion::to_euler321() const {
