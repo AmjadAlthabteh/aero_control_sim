@@ -35,7 +35,9 @@ double PID::update(double setpoint, double measurement, double dt_s) {
 
     // optional first-order low-pass filter on derivative term
     if (gains_.tau_d > 0.0) {
-      const double alpha = dt_s / (gains_.tau_d + dt_s);
+      // matched-Z (impulse-invariant) discretisation: places the digital pole at
+      // exp(-dt/tau), exactly matching the analog corner frequency at any sample rate.
+      const double alpha = 1.0 - std::exp(-dt_s / gains_.tau_d);
       d_filtered_ = (1.0 - alpha) * d_filtered_ + alpha * d_meas;
       d_meas = d_filtered_;
     }
