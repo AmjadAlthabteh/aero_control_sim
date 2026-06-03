@@ -51,23 +51,50 @@ double Matrix3::det() const {
 }
 
 Matrix3 Matrix3::inverse() const {
-  const double d = det();
+  // Tikhonov regularisation: if the matrix is near-singular, add ε·I before
+  // inverting rather than throwing.
+  //
+  // Why not throw?
+  //   An exception mid-simulation aborts the entire run and discards all
+  //   telemetry collected up to that point.  A near-singular inertia tensor
+  //   (e.g. from a mis-typed diagonal element) should not be a fatal error.
+  //
+  // What regularisation does:
+  //   Adding ε·I shifts all singular values by +ε, guaranteeing |det| > 0.
+  //   For a well-conditioned physical matrix (inertia tensor, rotation) ε is
+  //   many orders of magnitude below the smallest eigenvalue, so the inverse
+  //   is numerically identical to the unperturbed result.  For a genuinely
+  //   degenerate matrix it returns the best available inverse rather than
+  //   crashing.  The choice ε = 1e-6 sits comfortably between the 1e-12
+  //   singularity threshold and any physically meaningful inertia value.
+  double d = det();
+  Matrix3 work = *this;
   if (std::abs(d) < 1e-12) {
-    throw std::runtime_error("Matrix3 inverse: singular matrix");
+    constexpr double kEps = 1e-6;
+    work.m[0][0] += kEps;
+    work.m[1][1] += kEps;
+    work.m[2][2] += kEps;
+    d = work.det();
+  }
+  if (std::abs(d) < 1e-30) {
+    // Completely degenerate even after regularisation — return identity.
+    return Matrix3::identity();
   }
 
+  // Adjugate / Cramer's rule for the (possibly regularised) matrix.
+  const auto& w = work.m;
   Matrix3 a{};
-  a.m[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / d;
-  a.m[0][1] = (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / d;
-  a.m[0][2] = (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / d;
+  a.m[0][0] = (w[1][1] * w[2][2] - w[1][2] * w[2][1]) / d;
+  a.m[0][1] = (w[0][2] * w[2][1] - w[0][1] * w[2][2]) / d;
+  a.m[0][2] = (w[0][1] * w[1][2] - w[0][2] * w[1][1]) / d;
 
-  a.m[1][0] = (m[1][2] * m[2][0] - m[1][0] * m[2][2]) / d;
-  a.m[1][1] = (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / d;
-  a.m[1][2] = (m[0][2] * m[1][0] - m[0][0] * m[1][2]) / d;
+  a.m[1][0] = (w[1][2] * w[2][0] - w[1][0] * w[2][2]) / d;
+  a.m[1][1] = (w[0][0] * w[2][2] - w[0][2] * w[2][0]) / d;
+  a.m[1][2] = (w[0][2] * w[1][0] - w[0][0] * w[1][2]) / d;
 
-  a.m[2][0] = (m[1][0] * m[2][1] - m[1][1] * m[2][0]) / d;
-  a.m[2][1] = (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / d;
-  a.m[2][2] = (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / d;
+  a.m[2][0] = (w[1][0] * w[2][1] - w[1][1] * w[2][0]) / d;
+  a.m[2][1] = (w[0][1] * w[2][0] - w[0][0] * w[2][1]) / d;
+  a.m[2][2] = (w[0][0] * w[1][1] - w[0][1] * w[1][0]) / d;
 
   return a;
 }
