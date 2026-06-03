@@ -7,6 +7,10 @@ namespace acs::aero {
 
 static double clamp(double x, double lo, double hi) { return std::max(lo, std::min(hi, x)); }
 
+// Critical AoA (~15 deg) and 5-deg transition band over which lift degrades to zero post-stall.
+static constexpr double kAlphaStall_rad = 0.2618;
+static constexpr double kAlphaStallBand_rad = 0.0873;
+
 AeroModel::AeroModel(const AeroParams& params) : params_(params) {}
 
 const AeroParams& AeroModel::params() const { return params_; }
@@ -47,17 +51,25 @@ AeroForcesMoments AeroModel::evaluate(const acs::math::Vector3& velocity_body_m_
 
   AeroCoefficients c{};
 
+  // Stall: above critical AoA, lift degrades smoothly to zero over the transition band.
+  // A pitch-down destabilisation (centre-of-pressure shift) grows proportionally so the
+  // aircraft naturally pitches towards recovery — matching real stall behaviour.
+  const double stall_excess = alpha - kAlphaStall_rad;
+  const double stall_factor =
+      (stall_excess > 0.0) ? clamp(1.0 - stall_excess / kAlphaStallBand_rad, 0.0, 1.0) : 1.0;
+  const double cm_stall = -(1.0 - stall_factor) * 0.8;
+
   // simple aero model:
   // - cx is mostly drag, grows with alpha^2 (induced + form drag lumped)
   // - cz provides lift in the body z-axis (down positive), so lift is -cz
   // - cy is sideforce from sideslip
   c.cx = params_.cx0 + params_.cx_alpha2 * alpha * alpha;
   c.cy = params_.cy0 + params_.cy_beta * beta;
-  c.cz = params_.cz0 + params_.cz_alpha * alpha;
+  c.cz = params_.cz0 + params_.cz_alpha * alpha * stall_factor;
 
   // moments (stability + control + rate damping).
   c.cl = params_.cl_beta * beta + params_.cl_da * u_cmd.aileron_rad + params_.cl_p * p_hat;
-  c.cm = params_.cm_alpha * alpha + params_.cm_de * u_cmd.elevator_rad + params_.cm_q * q_hat;
+  c.cm = params_.cm_alpha * alpha + params_.cm_de * u_cmd.elevator_rad + params_.cm_q * q_hat + cm_stall;
   c.cn = params_.cn_beta * beta + params_.cn_dr * u_cmd.rudder_rad + params_.cn_r * r_hat;
 
   const Vector3 f_aero_b(qbar * params_.s_ref_m2 * c.cx,  //
