@@ -23,14 +23,18 @@ ImuSample Sensors::imu(const acs::math::Vector3& specific_force_body_m_s2,
                        double dt_s) {
   if (dt_s > 0.0) {
     const double sdt = std::sqrt(dt_s);
-    const double accel_rw = cfg_.accel_bias_rw_std_m_s2_sqrt_s * sdt;
-    const double gyro_rw = cfg_.gyro_bias_rw_std_rad_s_sqrt_s * sdt;
-    accel_bias_m_s2_.x += noise_.gaussian(0.0, accel_rw);
-    accel_bias_m_s2_.y += noise_.gaussian(0.0, accel_rw);
-    accel_bias_m_s2_.z += noise_.gaussian(0.0, accel_rw);
-    gyro_bias_rad_s_.x += noise_.gaussian(0.0, gyro_rw);
-    gyro_bias_rad_s_.y += noise_.gaussian(0.0, gyro_rw);
-    gyro_bias_rad_s_.z += noise_.gaussian(0.0, gyro_rw);
+    if (cfg_.accel_bias_rw_std_m_s2_sqrt_s > 0.0) {
+      const double accel_rw = cfg_.accel_bias_rw_std_m_s2_sqrt_s * sdt;
+      accel_bias_m_s2_.x += noise_.gaussian(0.0, accel_rw);
+      accel_bias_m_s2_.y += noise_.gaussian(0.0, accel_rw);
+      accel_bias_m_s2_.z += noise_.gaussian(0.0, accel_rw);
+    }
+    if (cfg_.gyro_bias_rw_std_rad_s_sqrt_s > 0.0) {
+      const double gyro_rw = cfg_.gyro_bias_rw_std_rad_s_sqrt_s * sdt;
+      gyro_bias_rad_s_.x += noise_.gaussian(0.0, gyro_rw);
+      gyro_bias_rad_s_.y += noise_.gaussian(0.0, gyro_rw);
+      gyro_bias_rad_s_.z += noise_.gaussian(0.0, gyro_rw);
+    }
   }
 
   ImuSample s{};

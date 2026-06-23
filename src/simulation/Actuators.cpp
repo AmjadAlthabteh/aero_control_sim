@@ -7,9 +7,12 @@ namespace acs::simulation {
 
 static double clamp(double x, double lo, double hi) { return std::max(lo, std::min(hi, x)); }
 
-static double first_order_step(double x, double u, double tau_s, double dt_s) {
-  if (tau_s <= 1e-9 || dt_s <= 0.0) return u;
-  const double a = std::exp(-dt_s / tau_s);
+static double first_order_alpha(double tau_s, double dt_s) {
+  if (tau_s <= 1e-9 || dt_s <= 0.0) return 0.0;
+  return std::exp(-dt_s / tau_s);
+}
+
+static double first_order_step(double x, double u, double a) {
   return a * x + (1.0 - a) * u;
 }
 
@@ -64,10 +67,12 @@ acs::aero::ControlInputs Actuators::update(const acs::aero::ControlInputs& cmd_i
   if (!throttle_stuck_ && faults_.throttle_stuck_time_s >= 0.0 && t_s >= faults_.throttle_stuck_time_s) throttle_stuck_ = true;
 
   // first-order dynamics
-  const double aileron_dyn = first_order_step(applied_.aileron_rad, cmd.aileron_rad, cfg_.surface_tau_s, dt_s);
-  const double elevator_dyn = first_order_step(applied_.elevator_rad, cmd.elevator_rad, cfg_.surface_tau_s, dt_s);
-  const double rudder_dyn = first_order_step(applied_.rudder_rad, cmd.rudder_rad, cfg_.surface_tau_s, dt_s);
-  const double throttle_dyn = first_order_step(applied_.throttle_01, cmd.throttle_01, cfg_.throttle_tau_s, dt_s);
+  const double surface_alpha = first_order_alpha(cfg_.surface_tau_s, dt_s);
+  const double throttle_alpha = first_order_alpha(cfg_.throttle_tau_s, dt_s);
+  const double aileron_dyn = first_order_step(applied_.aileron_rad, cmd.aileron_rad, surface_alpha);
+  const double elevator_dyn = first_order_step(applied_.elevator_rad, cmd.elevator_rad, surface_alpha);
+  const double rudder_dyn = first_order_step(applied_.rudder_rad, cmd.rudder_rad, surface_alpha);
+  const double throttle_dyn = first_order_step(applied_.throttle_01, cmd.throttle_01, throttle_alpha);
 
   // rate limits
   const double aileron_rl = rate_limit_step(applied_.aileron_rad, aileron_dyn, cfg_.surface_rate_limit_rad_s, dt_s);
@@ -84,4 +89,3 @@ acs::aero::ControlInputs Actuators::update(const acs::aero::ControlInputs& cmd_i
 }
 
 }  // namespace acs::simulation
-

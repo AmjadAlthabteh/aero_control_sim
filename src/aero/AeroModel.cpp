@@ -35,13 +35,17 @@ AeroForcesMoments AeroModel::evaluate(const acs::math::Vector3& velocity_body_m_
   const double beta = std::asin(clamp(v / vmag, -1.0, 1.0));
 
   const double qbar = 0.5 * rho_kg_m3 * v2;
+  const double qbar_area = qbar * params_.s_ref_m2;
   const double p = omega_body_rad_s.x;
   const double q = omega_body_rad_s.y;
   const double r = omega_body_rad_s.z;
 
-  const double p_hat = (params_.b_ref_m / (2.0 * vmag)) * p;
-  const double q_hat = (params_.c_ref_m / (2.0 * vmag)) * q;
-  const double r_hat = (params_.b_ref_m / (2.0 * vmag)) * r;
+  const double inverse_twice_airspeed = 0.5 / vmag;
+  const double roll_yaw_rate_scale = params_.b_ref_m * inverse_twice_airspeed;
+  const double pitch_rate_scale = params_.c_ref_m * inverse_twice_airspeed;
+  const double p_hat = roll_yaw_rate_scale * p;
+  const double q_hat = pitch_rate_scale * q;
+  const double r_hat = roll_yaw_rate_scale * r;
 
   ControlInputs u_cmd = u_in;
   u_cmd.aileron_rad = clamp(u_cmd.aileron_rad, -params_.aileron_limit_rad, params_.aileron_limit_rad);
@@ -72,13 +76,15 @@ AeroForcesMoments AeroModel::evaluate(const acs::math::Vector3& velocity_body_m_
   c.cm = params_.cm_alpha * alpha + params_.cm_de * u_cmd.elevator_rad + params_.cm_q * q_hat + cm_stall;
   c.cn = params_.cn_beta * beta + params_.cn_dr * u_cmd.rudder_rad + params_.cn_r * r_hat;
 
-  const Vector3 f_aero_b(qbar * params_.s_ref_m2 * c.cx,  //
-                         qbar * params_.s_ref_m2 * c.cy,  //
-                         qbar * params_.s_ref_m2 * c.cz);
+  const Vector3 f_aero_b(qbar_area * c.cx,  //
+                         qbar_area * c.cy,  //
+                         qbar_area * c.cz);
 
-  const Vector3 m_aero_b(qbar * params_.s_ref_m2 * params_.b_ref_m * c.cl,  //
-                         qbar * params_.s_ref_m2 * params_.c_ref_m * c.cm,  //
-                         qbar * params_.s_ref_m2 * params_.b_ref_m * c.cn);
+  const double roll_yaw_moment_scale = qbar_area * params_.b_ref_m;
+  const double pitch_moment_scale = qbar_area * params_.c_ref_m;
+  const Vector3 m_aero_b(roll_yaw_moment_scale * c.cl,  //
+                         pitch_moment_scale * c.cm,     //
+                         roll_yaw_moment_scale * c.cn);
 
   // propulsion: thrust along body x (forward). no propwash or torque modeled.
   const Vector3 f_thrust_b(params_.max_thrust_n * u_cmd.throttle_01, 0.0, 0.0);

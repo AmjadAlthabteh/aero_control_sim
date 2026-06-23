@@ -72,8 +72,8 @@ struct AhrsState {
 
 static AhrsState ahrs_update(const AhrsState& prev, const ImuSample& imu, double dt_s) {
   constexpr double kTau_s       = 0.5;   // complementary filter time constant (seconds)
-  constexpr double kG_lo        = 4.9;   // 0.5 g  — lower accel trust gate (m/s²)
-  constexpr double kG_hi        = 14.7;  // 1.5 g  — upper accel trust gate (m/s²)
+  constexpr double kG_lo_sq     = 4.9 * 4.9;    // squared 0.5 g trust gate
+  constexpr double kG_hi_sq     = 14.7 * 14.7;  // squared 1.5 g trust gate
 
   const double alpha = kTau_s / (kTau_s + dt_s);
 
@@ -89,12 +89,12 @@ static AhrsState ahrs_update(const AhrsState& prev, const ImuSample& imu, double
   const double ax = imu.accel_body_m_s2.x;
   const double ay = imu.accel_body_m_s2.y;
   const double az = imu.accel_body_m_s2.z;
-  const double accel_norm = std::sqrt(ax * ax + ay * ay + az * az);
+  const double accel_norm_sq = ax * ax + ay * ay + az * az;
 
   AhrsState out{};
   out.yaw_rad = yaw_gyro;  // yaw is always gyro-only
 
-  if (accel_norm > kG_lo && accel_norm < kG_hi) {
+  if (accel_norm_sq > kG_lo_sq && accel_norm_sq < kG_hi_sq) {
     // Accelerometer is plausibly sensing gravity — blend it in.
     const double roll_accel  = std::atan2(-ay, -az);
     const double pitch_accel = std::atan2(ax, std::sqrt(ay * ay + az * az));
@@ -124,6 +124,9 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
   using acs::physics::BodyForcesMoments;
   using acs::physics::RigidBodyState;
 
+  const auto& aero_model = aircraft_.aero_model();
+  const auto& rigid_body = aircraft_.rigid_body();
+  const double inverse_mass = 1.0 / rigid_body.params().mass_kg;
   const bool enable_telemetry = !telemetry_path.empty();
   const bool enable_profiling = enable_telemetry;
 
@@ -179,7 +182,6 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
     BaroSample baro{};
     {
       PROFILE_SCOPE("control_update");
-      const Vector3 eul = x.q_nb.to_euler321();
       const double airspeed = v_air_b.norm();
 
       if (enable_profiling) {
@@ -195,8 +197,8 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
 
       // Feed the IMU with the aero-derived specific force so the accelerometer
       // sees realistic inertial loading (thrust, lift, drag) rather than just gravity.
-      const auto aero_for_imu = aircraft_.aero_model().evaluate(v_air_b, x.omega_body_rad_s, atm.rho_kg_m3, u_applied);
-      const Vector3 specific_force = (1.0 / aircraft_.rigid_body().params().mass_kg) * aero_for_imu.force_body_n;
+      const auto aero_for_imu = aero_model.evaluate(v_air_b, x.omega_body_rad_s, atm.rho_kg_m3, u_applied);
+      const Vector3 specific_force = inverse_mass * aero_for_imu.force_body_n;
       const auto imu = sensors_.imu(specific_force, x.omega_body_rad_s, sim_cfg_.dt_s);
 
       // Run the complementary filter AHRS.  The estimated attitude now comes
@@ -204,8 +206,6 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
       // noise from the sensor model feed through to the controller — the
       // simulation exercises a realistic closed-loop sensing chain.
       ahrs = ahrs_update(ahrs, imu, sim_cfg_.dt_s);
-      (void)eul;   // truth euler kept for reference; AHRS drives control
-
       acs::gnc::EstimatedState est{};
       est.roll_rad  = ahrs.roll_rad;
       est.pitch_rad = ahrs.pitch_rad;
@@ -238,12 +238,12 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
       const Matrix3 c_bn_s = c_nb_s.transposed();
       const Vector3 wind_b_s = c_bn_s * wind_n;
       const Vector3 v_air_b_s = xs.velocity_body_m_s - wind_b_s;
-      const auto aero_eval = aircraft_.aero_model().evaluate(v_air_b_s, xs.omega_body_rad_s, atm_s.rho_kg_m3, u_hold);
+      const auto aero_eval = aero_model.evaluate(v_air_b_s, xs.omega_body_rad_s, atm_s.rho_kg_m3, u_hold);
 
       BodyForcesMoments fm{};
       fm.force_body_n = aero_eval.force_body_n;
       fm.moment_body_n_m = aero_eval.moment_body_n_m;
-      return aircraft_.rigid_body().derivative(xs, fm, g_n_s);
+      return rigid_body.derivative(xs, fm, g_n_s);
     };
 
     if (enable_profiling) {
@@ -270,7 +270,7 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
       const Vector3 v_air_b_log = x.velocity_body_m_s - wind_b_log;
       const auto atm_log = acs::physics::Atmosphere::at_altitude(-x.position_ned_m.z);
       const auto aero_eval =
-          aircraft_.aero_model().evaluate(v_air_b_log, x.omega_body_rad_s, atm_log.rho_kg_m3, u_hold);
+          aero_model.evaluate(v_air_b_log, x.omega_body_rad_s, atm_log.rho_kg_m3, u_hold);
       const Vector3 eul = x.q_nb.to_euler321();
 
       row.str(std::string{});
