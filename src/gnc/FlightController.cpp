@@ -1,23 +1,12 @@
 #include "acs/gnc/FlightController.h"
 
 #include <algorithm>
-#include <cmath>
 
 #include "acs/math/Constants.h"
 
 namespace acs::gnc {
 
 static double clamp(double x, double lo, double hi) { return std::max(lo, std::min(hi, x)); }
-
-static double wrap_pi(double a) {
-  using acs::math::kPi;
-  using acs::math::kTwoPi;
-  if (!std::isfinite(a)) return 0.0;
-  a = std::remainder(a, kTwoPi);
-  if (a <= -kPi) a += kTwoPi;
-  if (a > kPi) a -= kTwoPi;
-  return a;
-}
 
 FlightController::FlightController(const ControllerConfig& cfg)
     : cfg_(cfg),
@@ -41,7 +30,7 @@ acs::aero::ControlInputs FlightController::update(const ControllerTargets& targe
   // - altitude loop generates a pitch command
   // - roll/pitch inner loops drive aileron/elevator
 
-  const double hdg_err = wrap_pi(targets.heading_rad - est.yaw_rad);
+  const double hdg_err = acs::math::wrap_pi(targets.heading_rad - est.yaw_rad);
   const double roll_cmd = clamp(targets.roll_rad + heading_pid_.update(0.0, -hdg_err, dt_s), -0.6, 0.6);
 
   const double alt_err = targets.altitude_m - est.altitude_m;

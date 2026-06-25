@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 namespace acs::math {
 
 // mathematical constants
@@ -12,5 +14,13 @@ constexpr double kRad2Deg = 180.0 / kPi;
 // physical constants
 constexpr double kGravityMsl_m_s2 = 9.80665;       // standard gravity at MSL
 constexpr double kEarthRadius_m = 6371000.0;       // mean Earth radius
+
+inline double wrap_pi(double angle_rad) {
+  if (!std::isfinite(angle_rad)) return 0.0;
+  double wrapped = std::remainder(angle_rad, kTwoPi);
+  if (wrapped <= -kPi) wrapped += kTwoPi;
+  if (wrapped > kPi) wrapped -= kTwoPi;
+  return wrapped;
+}
 
 }  // namespace acs::math

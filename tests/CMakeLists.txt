@@ -25,3 +25,13 @@ target_include_directories(aero_control_sim_test_analyzer PRIVATE
 target_link_libraries(aero_control_sim_test_analyzer PRIVATE acs)
 
 add_test(NAME aero_control_sim_test_analyzer COMMAND aero_control_sim_test_analyzer)
+
+add_executable(aero_control_sim_test_math_constants
+    test_math_constants.cpp
+)
+
+target_include_directories(aero_control_sim_test_math_constants PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+
+add_test(NAME aero_control_sim_test_math_constants COMMAND aero_control_sim_test_math_constants)
