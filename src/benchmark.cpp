@@ -160,6 +160,8 @@ int main(int argc, char* argv[]) {
       config.num_threads = std::stoul(argv[++i]);
     } else if (arg == "--time" && i + 1 < argc) {
       config.sim_time_s = std::stod(argv[++i]);
+    } else if (arg == "--dt" && i + 1 < argc) {
+      config.dt_s = std::stod(argv[++i]);
     } else if (arg == "--verbose" || arg == "-v") {
       config.verbose = true;
     } else if (arg == "--help" || arg == "-h") {
@@ -168,10 +170,30 @@ int main(int argc, char* argv[]) {
       std::cout << "  --sims N      Number of simulations to run (default: 10)\n";
       std::cout << "  --threads N   Number of threads to use (default: hardware_concurrency)\n";
       std::cout << "  --time T      Simulation time in seconds (default: 10.0)\n";
+      std::cout << "  --dt T        Simulation timestep in seconds (default: 0.01)\n";
       std::cout << "  --verbose     Show progress during benchmark\n";
       std::cout << "  --help        Show this help message\n";
       return 0;
     }
+  }
+
+  if (config.num_simulations == 0) {
+    std::cerr << "Error: --sims must be greater than zero\n";
+    return 1;
+  }
+  if (config.num_threads == 0) {
+    config.num_threads = 1;
+  }
+  if (config.num_threads > config.num_simulations) {
+    config.num_threads = config.num_simulations;
+  }
+  if (config.sim_time_s <= 0.0) {
+    std::cerr << "Error: --time must be greater than zero\n";
+    return 1;
+  }
+  if (config.dt_s <= 0.0 || config.dt_s > config.sim_time_s) {
+    std::cerr << "Error: --dt must be greater than zero and no larger than --time\n";
+    return 1;
   }
 
   // Run single-threaded benchmark
