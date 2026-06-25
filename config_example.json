@@ -26,6 +26,16 @@
     "max_thrust_n": 22.0
   },
 
+  "controller": {
+    "roll_gains": {"kp": 6.0, "ki": 0.5, "kd": 0.25, "kaw": 1.0, "tau_d": 0.0},
+    "pitch_gains": {"kp": 7.0, "ki": 0.6, "kd": 0.30, "kaw": 1.0, "tau_d": 0.0},
+    "heading_gains": {"kp": 2.0, "ki": 0.1, "kd": 0.0, "kaw": 1.0, "tau_d": 0.0},
+    "altitude_gains": {"kp": 0.8, "ki": 0.1, "kd": 0.0, "kaw": 1.0, "tau_d": 0.0},
+    "integrator_limit": 0.5,
+    "surface_limit_rad": 0.35,
+    "throttle_limit": 1.0
+  },
+
   "wind": {
     "mean_ned_m_s": [0.0, 0.0, 0.0],
     "gust_std_dev_m_s": 0.0,
@@ -37,7 +47,8 @@
     "surface_rate_limit_rad_s": 999999.0,
     "throttle_tau_s": 0.0,
     "throttle_rate_limit_per_s": 999999.0,
-    "surface_limit_rad": 0.35
+    "surface_limit_rad": 0.35,
+    "surface_deadband_rad": 0.003
   },
 
   "actuator_faults": {
