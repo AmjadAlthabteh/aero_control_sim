@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstddef>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -16,6 +17,7 @@ static void print_help(const char* argv0) {
   std::cout << "  --config PATH          Load simulation settings from JSON config\n";
   std::cout << "  --dt S                 Timestep (default 0.01)\n";
   std::cout << "  --time S               Simulation time (default 35)\n";
+  std::cout << "  --max-steps N          Cap integration steps (default 0 = disabled)\n";
   std::cout << "  --telemetry PATH       Telemetry output path (default telemetry.csv)\n";
   std::cout << "  --no-telemetry         Disable telemetry logging\n";
   std::cout << "  --seed N               RNG seed for deterministic runs (default 42)\n";
@@ -63,6 +65,16 @@ static bool parse_uint(const char* s, unsigned int& out, const char* param_name)
       return false;
     }
     out = static_cast<unsigned int>(v);
+    return true;
+  } catch (...) {
+    std::cerr << "Error: Invalid value '" << s << "' for parameter " << param_name << "\n";
+    return false;
+  }
+}
+
+static bool parse_size(const char* s, std::size_t& out, const char* param_name) {
+  try {
+    out = static_cast<std::size_t>(std::stoull(s));
     return true;
   } catch (...) {
     std::cerr << "Error: Invalid value '" << s << "' for parameter " << param_name << "\n";
@@ -146,6 +158,8 @@ int main(int argc, char* argv[]) {
       if (!parse_double(argv[++i], dt_s, "--dt")) return 1;
     } else if (arg == "--time" && i + 1 < argc) {
       if (!parse_double(argv[++i], sim_time_s, "--time")) return 1;
+    } else if (arg == "--max-steps" && i + 1 < argc) {
+      if (!parse_size(argv[++i], sim_cfg.max_steps, "--max-steps")) return 1;
     } else if (arg == "--telemetry" && i + 1 < argc) {
       telemetry_path = argv[++i];
     } else if (arg == "--no-telemetry") {
