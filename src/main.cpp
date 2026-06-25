@@ -1,8 +1,10 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <stdexcept>
 #include <string>
 
+#include "acs/config/ConfigLoader.h"
 #include "acs/gnc/FlightController.h"
 #include "acs/math/Constants.h"
 #include "acs/simulation/Aircraft.h"
@@ -11,6 +13,7 @@
 static void print_help(const char* argv0) {
   std::cout << "Usage: " << argv0 << " [options]\n\n";
   std::cout << "Options:\n";
+  std::cout << "  --config PATH          Load simulation settings from JSON config\n";
   std::cout << "  --dt S                 Timestep (default 0.01)\n";
   std::cout << "  --time S               Simulation time (default 35)\n";
   std::cout << "  --telemetry PATH       Telemetry output path (default telemetry.csv)\n";
@@ -68,7 +71,6 @@ static bool parse_uint(const char* s, unsigned int& out, const char* param_name)
 }
 
 int main(int argc, char* argv[]) {
-  using acs::math::kPi;
   using acs::math::kDeg2Rad;
   using acs::math::Matrix3;
   using acs::math::Vector3;
@@ -99,16 +101,38 @@ int main(int argc, char* argv[]) {
   aircraft_cfg.aero.c_ref_m = 0.25;
   aircraft_cfg.aero.max_thrust_n = 22.0;
 
-  acs::simulation::Aircraft aircraft(aircraft_cfg);
-
   acs::gnc::ControllerConfig ctrl_cfg{};
   ctrl_cfg.surface_limit_rad = aircraft_cfg.aero.aileron_limit_rad;
-  acs::gnc::FlightController controller(ctrl_cfg);
 
   acs::simulation::SensorConfig sensor_cfg{};
 
   acs::simulation::SimulatorConfig sim_cfg{};
   sim_cfg.actuators.surface_limit_rad = aircraft_cfg.aero.aileron_limit_rad;
+
+  for (int i = 1; i < argc; ++i) {
+    const std::string arg = argv[i];
+    if (arg != "--config") continue;
+    if (i + 1 >= argc) {
+      std::cerr << "Error: --config requires a path\n";
+      return 1;
+    }
+
+    try {
+      const auto params = acs::config::ConfigLoader::load_from_file(argv[++i]);
+      dt_s = params.dt_s;
+      sim_time_s = params.sim_time_s;
+      seed = params.seed;
+      telemetry_path = params.enable_telemetry ? params.telemetry_path : std::string{};
+      targets = params.targets;
+      aircraft_cfg = params.aircraft_cfg;
+      ctrl_cfg = params.ctrl_cfg;
+      sensor_cfg = params.sensor_cfg;
+      sim_cfg = params.sim_cfg;
+    } catch (const std::exception& e) {
+      std::cerr << "Error: Failed to load config: " << e.what() << "\n";
+      return 1;
+    }
+  }
 
   // Parse options
   for (int i = 1; i < argc; ++i) {
@@ -116,6 +140,8 @@ int main(int argc, char* argv[]) {
     if (arg == "--help" || arg == "-h") {
       print_help(argv[0]);
       return 0;
+    } else if (arg == "--config" && i + 1 < argc) {
+      ++i;
     } else if (arg == "--dt" && i + 1 < argc) {
       if (!parse_double(argv[++i], dt_s, "--dt")) return 1;
     } else if (arg == "--time" && i + 1 < argc) {
@@ -231,6 +257,8 @@ int main(int argc, char* argv[]) {
   sim_cfg.sim_time_s = sim_time_s;
   sim_cfg.seed = seed;
 
+  acs::simulation::Aircraft aircraft(aircraft_cfg);
+  acs::gnc::FlightController controller(ctrl_cfg);
   acs::simulation::Simulator sim(sim_cfg, aircraft, controller, sensor_cfg);
 
   sim.run(targets, telemetry_path);
