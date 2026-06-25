@@ -16,10 +16,6 @@ static double first_order_step(double x, double u, double a) {
   return a * x + (1.0 - a) * u;
 }
 
-// Mechanical play / gearbox backlash: commands inside the dead zone produce no output.
-// The offset form (subtract band after threshold) keeps the response continuous.
-static constexpr double kSurfaceDeadband_rad = 0.003;  // ~0.17 deg, typical RC/UAV servo
-
 static double apply_deadband(double x, double band) {
   if (band <= 0.0 || std::abs(x) <= band) return 0.0;
   return x > 0.0 ? x - band : x + band;
@@ -56,9 +52,9 @@ acs::aero::ControlInputs Actuators::update(const acs::aero::ControlInputs& cmd_i
   cmd.rudder_rad = clamp(cmd.rudder_rad, -cfg_.surface_limit_rad, cfg_.surface_limit_rad);
   cmd.throttle_01 = clamp(cmd.throttle_01, 0.0, 1.0);
 
-  cmd.aileron_rad  = apply_deadband(cmd.aileron_rad,  kSurfaceDeadband_rad);
-  cmd.elevator_rad = apply_deadband(cmd.elevator_rad, kSurfaceDeadband_rad);
-  cmd.rudder_rad   = apply_deadband(cmd.rudder_rad,   kSurfaceDeadband_rad);
+  cmd.aileron_rad = apply_deadband(cmd.aileron_rad, cfg_.surface_deadband_rad);
+  cmd.elevator_rad = apply_deadband(cmd.elevator_rad, cfg_.surface_deadband_rad);
+  cmd.rudder_rad = apply_deadband(cmd.rudder_rad, cfg_.surface_deadband_rad);
 
   // latch faults if time has passed
   if (!aileron_stuck_ && faults_.aileron_stuck_time_s >= 0.0 && t_s >= faults_.aileron_stuck_time_s) aileron_stuck_ = true;

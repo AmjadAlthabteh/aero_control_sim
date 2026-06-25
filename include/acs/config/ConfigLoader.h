@@ -143,6 +143,8 @@ public:
         params.sim_cfg.actuators.throttle_rate_limit_per_s = act.get("throttle_rate_limit_per_s").as_number();
       if (act.has("surface_limit_rad"))
         params.sim_cfg.actuators.surface_limit_rad = act.get("surface_limit_rad").as_number();
+      if (act.has("surface_deadband_rad"))
+        params.sim_cfg.actuators.surface_deadband_rad = act.get("surface_deadband_rad").as_number();
     }
 
     // Load actuator faults

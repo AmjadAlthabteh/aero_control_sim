@@ -19,7 +19,8 @@ int main() {
       "throttle_limit": 0.77
     },
     "actuators": {
-      "surface_limit_rad": 0.19
+      "surface_limit_rad": 0.19,
+      "surface_deadband_rad": 0.02
     }
   })");
 
@@ -35,6 +36,7 @@ int main() {
   assert(near(params.ctrl_cfg.surface_limit_rad, 0.21));
   assert(near(params.ctrl_cfg.throttle_limit, 0.77));
   assert(near(params.sim_cfg.actuators.surface_limit_rad, 0.19));
+  assert(near(params.sim_cfg.actuators.surface_deadband_rad, 0.02));
 
   return 0;
 }

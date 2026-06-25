@@ -15,6 +15,9 @@ struct ActuatorConfig {
 
   // hard limits.
   double surface_limit_rad{0.35};
+
+  // mechanical play / gearbox backlash. commands inside this band produce no surface output.
+  double surface_deadband_rad{0.003};
 };
 
 struct ActuatorFaultConfig {
@@ -49,4 +52,3 @@ private:
 };
 
 }  // namespace acs::simulation
-
