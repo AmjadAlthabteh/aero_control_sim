@@ -121,7 +121,11 @@ class JsonParser {
 public:
   static JsonValue parse(const std::string& json) {
     JsonParser parser(json);
-    return parser.parse_value();
+    JsonValue value = parser.parse_value();
+    if (parser.peek() != '\0') {
+      throw std::runtime_error("Unexpected trailing content in JSON");
+    }
+    return value;
   }
 
   static JsonValue parse_file(const std::string& path) {
@@ -220,7 +224,10 @@ private:
           case '"': str += '"'; break;
           case '\\': str += '\\'; break;
           case '/': str += '/'; break;
+          case 'b': str += '\b'; break;
+          case 'f': str += '\f'; break;
           case 'n': str += '\n'; break;
+          case 'r': str += '\r'; break;
           case 't': str += '\t'; break;
           default: str += c;
         }

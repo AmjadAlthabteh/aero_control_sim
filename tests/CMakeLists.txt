@@ -35,3 +35,13 @@ target_include_directories(aero_control_sim_test_math_constants PRIVATE
 )
 
 add_test(NAME aero_control_sim_test_math_constants COMMAND aero_control_sim_test_math_constants)
+
+add_executable(aero_control_sim_test_json_config
+    test_json_config.cpp
+)
+
+target_include_directories(aero_control_sim_test_json_config PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+
+add_test(NAME aero_control_sim_test_json_config COMMAND aero_control_sim_test_json_config)
