@@ -13,6 +13,8 @@ Telemetry::~Telemetry() {
 
 bool Telemetry::ok() const { return out_.good(); }
 
+std::size_t Telemetry::rows_written() const { return rows_written_; }
+
 void Telemetry::write_header() {
   if (!ok()) return;
   out_ << "t_s,"
@@ -34,6 +36,9 @@ void Telemetry::write_header() {
 void Telemetry::write_row(const std::string& csv_row) {
   if (!ok()) return;
   out_ << csv_row << "\n";
+  if (ok()) {
+    ++rows_written_;
+  }
 }
 
 }  // namespace acs::simulation

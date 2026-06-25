@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <cstddef>
 #include <string>
 
 namespace acs::simulation {
@@ -16,10 +17,11 @@ public:
   void write_header();
   void write_row(const std::string& csv_row);
   bool ok() const;
+  std::size_t rows_written() const;
 
 private:
   std::ofstream out_;
+  std::size_t rows_written_{0};
 };
 
 }  // namespace acs::simulation
-
