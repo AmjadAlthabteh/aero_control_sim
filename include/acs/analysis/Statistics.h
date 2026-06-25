@@ -90,6 +90,7 @@ public:
     double settling_time_s{0.0};
     double max_overshoot_pct{0.0};
     double steady_state_error{0.0};
+    double altitude_p95_m{0.0};
     bool is_stable{true};
   };
 

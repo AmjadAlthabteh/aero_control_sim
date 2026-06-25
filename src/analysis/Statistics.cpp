@@ -214,6 +214,7 @@ TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::stri
   report.roll_rate_rad_s.compute(p);
   report.pitch_rate_rad_s.compute(q);
   report.yaw_rate_rad_s.compute(r);
+  report.altitude_p95_m = compute_percentile(altitude, 95.0);
 
   // Stability check - check if any values are diverging
   const double max_altitude = std::max(200.0, std::abs(target_altitude_m) * 5.0);  // meters
@@ -305,6 +306,8 @@ void TelemetryAnalyzer::print_report(const AnalysisReport& report) {
             << (report.target_altitude_from_telemetry ? " (from telemetry)" : "") << "\n";
   std::cout << "Steady State Error: " << std::fixed << std::setprecision(3)
             << report.steady_state_error << " m\n";
+  std::cout << "Altitude P95: " << std::fixed << std::setprecision(3)
+            << report.altitude_p95_m << " m\n";
   std::cout << "Max Overshoot: " << std::fixed << std::setprecision(2)
             << report.max_overshoot_pct << " %\n";
   if (std::isfinite(report.settling_time_s)) {

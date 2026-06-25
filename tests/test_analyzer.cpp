@@ -32,9 +32,9 @@ int main() {
   assert(report.target_altitude_from_telemetry);
   assert(near(report.target_altitude_m, 100.0));
   assert(near(report.steady_state_error, 0.0));
+  assert(near(report.altitude_p95_m, 104.0, 1e-9));
   assert(near(report.max_overshoot_pct, 5.0, 1e-6));
   assert(near(report.settling_time_s, 3.0, 1e-9));
 
   return 0;
 }
-
