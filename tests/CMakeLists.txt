@@ -45,3 +45,15 @@ target_include_directories(aero_control_sim_test_json_config PRIVATE
 )
 
 add_test(NAME aero_control_sim_test_json_config COMMAND aero_control_sim_test_json_config)
+
+add_executable(aero_control_sim_test_config_loader
+    test_config_loader.cpp
+)
+
+target_include_directories(aero_control_sim_test_config_loader PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+
+target_link_libraries(aero_control_sim_test_config_loader PRIVATE acs)
+
+add_test(NAME aero_control_sim_test_config_loader COMMAND aero_control_sim_test_config_loader)

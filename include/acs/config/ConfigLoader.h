@@ -91,6 +91,29 @@ public:
         params.aircraft_cfg.aero.max_thrust_n = aircraft.get("max_thrust_n").as_number();
     }
 
+    // Load controller configuration
+    if (root.has("controller")) {
+      auto controller = root.get("controller");
+      auto load_gains = [](const JsonValue& obj, acs::gnc::PID::Gains& gains) {
+        if (obj.has("kp")) gains.kp = obj.get("kp").as_number();
+        if (obj.has("ki")) gains.ki = obj.get("ki").as_number();
+        if (obj.has("kd")) gains.kd = obj.get("kd").as_number();
+        if (obj.has("kaw")) gains.kaw = obj.get("kaw").as_number();
+        if (obj.has("tau_d")) gains.tau_d = obj.get("tau_d").as_number();
+      };
+
+      if (controller.has("roll_gains")) load_gains(controller.get("roll_gains"), params.ctrl_cfg.roll_gains);
+      if (controller.has("pitch_gains")) load_gains(controller.get("pitch_gains"), params.ctrl_cfg.pitch_gains);
+      if (controller.has("heading_gains")) load_gains(controller.get("heading_gains"), params.ctrl_cfg.heading_gains);
+      if (controller.has("altitude_gains")) load_gains(controller.get("altitude_gains"), params.ctrl_cfg.altitude_gains);
+      if (controller.has("integrator_limit"))
+        params.ctrl_cfg.integrator_limit = controller.get("integrator_limit").as_number();
+      if (controller.has("surface_limit_rad"))
+        params.ctrl_cfg.surface_limit_rad = controller.get("surface_limit_rad").as_number();
+      if (controller.has("throttle_limit"))
+        params.ctrl_cfg.throttle_limit = controller.get("throttle_limit").as_number();
+    }
+
     // Load wind configuration
     if (root.has("wind")) {
       auto wind = root.get("wind");
@@ -167,12 +190,21 @@ public:
         params.sensor_cfg.gyro_bias_rw_std_rad_s_sqrt_s = sensors.get("gyro_bias_rw_std_rad_s_sqrt_s").as_number();
     }
 
+    const bool controller_surface_limit_configured =
+        root.has("controller") && root.get("controller").has("surface_limit_rad");
+    const bool actuator_surface_limit_configured =
+        root.has("actuators") && root.get("actuators").has("surface_limit_rad");
+
     // Set derived parameters
     params.sim_cfg.dt_s = params.dt_s;
     params.sim_cfg.sim_time_s = params.sim_time_s;
     params.sim_cfg.seed = params.seed;
-    params.sim_cfg.actuators.surface_limit_rad = params.aircraft_cfg.aero.aileron_limit_rad;
-    params.ctrl_cfg.surface_limit_rad = params.aircraft_cfg.aero.aileron_limit_rad;
+    if (!actuator_surface_limit_configured) {
+      params.sim_cfg.actuators.surface_limit_rad = params.aircraft_cfg.aero.aileron_limit_rad;
+    }
+    if (!controller_surface_limit_configured) {
+      params.ctrl_cfg.surface_limit_rad = params.aircraft_cfg.aero.aileron_limit_rad;
+    }
 
     return params;
   }
