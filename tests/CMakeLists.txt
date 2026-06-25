@@ -57,3 +57,15 @@ target_include_directories(aero_control_sim_test_config_loader PRIVATE
 target_link_libraries(aero_control_sim_test_config_loader PRIVATE acs)
 
 add_test(NAME aero_control_sim_test_config_loader COMMAND aero_control_sim_test_config_loader)
+
+add_executable(aero_control_sim_test_noise
+    test_noise.cpp
+)
+
+target_include_directories(aero_control_sim_test_noise PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+
+target_link_libraries(aero_control_sim_test_noise PRIVATE acs)
+
+add_test(NAME aero_control_sim_test_noise COMMAND aero_control_sim_test_noise)

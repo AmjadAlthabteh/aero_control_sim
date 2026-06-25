@@ -29,16 +29,14 @@ double Noise::gaussian(double mean, double stddev) {
   // keeps the sequence from each Noise instance purely determined by its own seed.
   // u1 is clamped away from zero to avoid log(0) → −∞ on rare full-zero draws.
   static constexpr double kTwoPi = 6.283185307179586;
-  std::uniform_real_distribution<double> u_dist{0.0, 1.0};
-  const double u1 = std::max(u_dist(rng_), 1e-300);
-  const double u2 = u_dist(rng_);
+  const double u1 = std::max(uniform01_(rng_), 1e-300);
+  const double u2 = uniform01_(rng_);
   const double z  = std::sqrt(-2.0 * std::log(u1)) * std::cos(kTwoPi * u2);
   return mean + stddev * z;
 }
 
 double Noise::uniform01() {
-  std::uniform_real_distribution<double> dist(0.0, 1.0);
-  return dist(rng_);
+  return uniform01_(rng_);
 }
 
 bool Noise::bernoulli(double p_true) {

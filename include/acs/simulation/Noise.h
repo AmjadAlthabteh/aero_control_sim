@@ -14,6 +14,7 @@ public:
 
 private:
   std::mt19937 rng_;
+  std::uniform_real_distribution<double> uniform01_{0.0, 1.0};
 };
 
 }  // namespace acs::simulation
