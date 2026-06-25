@@ -105,6 +105,7 @@ private:
 // Utility functions for signal processing
 double compute_rms(const std::vector<double>& data);
 double compute_peak_to_peak(const std::vector<double>& data);
+double compute_percentile(std::vector<double> data, double percentile);
 std::vector<double> moving_average(const std::vector<double>& data, size_t window_size);
 std::vector<double> differentiate(const std::vector<double>& data, double dt);
 

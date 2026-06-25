@@ -332,6 +332,20 @@ double compute_peak_to_peak(const std::vector<double>& data) {
   return *max_it - *min_it;
 }
 
+double compute_percentile(std::vector<double> data, double percentile) {
+  if (data.empty()) return 0.0;
+  if (!std::isfinite(percentile)) return std::numeric_limits<double>::quiet_NaN();
+
+  percentile = std::clamp(percentile, 0.0, 100.0);
+  std::sort(data.begin(), data.end());
+
+  const double rank = (percentile / 100.0) * static_cast<double>(data.size() - 1);
+  const auto lo = static_cast<size_t>(std::floor(rank));
+  const auto hi = static_cast<size_t>(std::ceil(rank));
+  const double frac = rank - static_cast<double>(lo);
+  return data[lo] * (1.0 - frac) + data[hi] * frac;
+}
+
 std::vector<double> moving_average(const std::vector<double>& data, size_t window_size) {
   std::vector<double> result;
   if (window_size == 0) return result;

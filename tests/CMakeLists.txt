@@ -81,3 +81,15 @@ target_include_directories(aero_control_sim_test_telemetry PRIVATE
 target_link_libraries(aero_control_sim_test_telemetry PRIVATE acs)
 
 add_test(NAME aero_control_sim_test_telemetry COMMAND aero_control_sim_test_telemetry)
+
+add_executable(aero_control_sim_test_statistics_utils
+    test_statistics_utils.cpp
+)
+
+target_include_directories(aero_control_sim_test_statistics_utils PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+
+target_link_libraries(aero_control_sim_test_statistics_utils PRIVATE acs)
+
+add_test(NAME aero_control_sim_test_statistics_utils COMMAND aero_control_sim_test_statistics_utils)
