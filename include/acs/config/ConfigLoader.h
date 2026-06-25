@@ -39,6 +39,7 @@ public:
     // Load basic simulation parameters
     if (root.has("dt_s")) params.dt_s = root.get("dt_s").as_number();
     if (root.has("sim_time_s")) params.sim_time_s = root.get("sim_time_s").as_number();
+    if (root.has("max_steps")) params.sim_cfg.max_steps = static_cast<size_t>(root.get("max_steps").as_number());
     if (root.has("seed")) params.seed = static_cast<unsigned int>(root.get("seed").as_number());
     if (root.has("telemetry_path")) params.telemetry_path = root.get("telemetry_path").as_string();
     if (root.has("enable_telemetry")) params.enable_telemetry = root.get("enable_telemetry").as_bool();

@@ -1,5 +1,6 @@
 #include "acs/simulation/Simulator.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <memory>
@@ -153,7 +154,10 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
   const Vector3 eul_init = x.q_nb.to_euler321();
   AhrsState ahrs{eul_init.x, eul_init.y, eul_init.z};
 
-  const int steps = static_cast<int>(std::ceil(sim_cfg_.sim_time_s / sim_cfg_.dt_s));
+  int steps = static_cast<int>(std::ceil(sim_cfg_.sim_time_s / sim_cfg_.dt_s));
+  if (sim_cfg_.max_steps > 0) {
+    steps = std::min(steps, static_cast<int>(sim_cfg_.max_steps));
+  }
   double t = 0.0;
   std::ostringstream row;
   row << std::fixed << std::setprecision(6);

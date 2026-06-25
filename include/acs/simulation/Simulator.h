@@ -9,11 +9,14 @@
 #include "acs/simulation/Telemetry.h"
 #include "acs/simulation/Wind.h"
 
+#include <cstddef>
+
 namespace acs::simulation {
 
 struct SimulatorConfig {
   double dt_s{0.01};
   double sim_time_s{30.0};
+  std::size_t max_steps{0};
   unsigned int seed{42U};
   WindConfig wind{};
   ActuatorConfig actuators{};

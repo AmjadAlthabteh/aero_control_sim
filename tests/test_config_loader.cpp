@@ -13,6 +13,7 @@ int main() {
   const auto root = acs::config::JsonParser::parse(R"({
     "dt_s": 0.02,
     "sim_time_s": 12.5,
+    "max_steps": 250,
     "controller": {
       "roll_gains": {"kp": 3.0, "ki": 0.2, "kd": 0.4, "kaw": 0.8, "tau_d": 0.05},
       "surface_limit_rad": 0.21,
@@ -28,6 +29,7 @@ int main() {
 
   assert(near(params.sim_cfg.dt_s, 0.02));
   assert(near(params.sim_cfg.sim_time_s, 12.5));
+  assert(params.sim_cfg.max_steps == 250);
   assert(near(params.ctrl_cfg.roll_gains.kp, 3.0));
   assert(near(params.ctrl_cfg.roll_gains.ki, 0.2));
   assert(near(params.ctrl_cfg.roll_gains.kd, 0.4));
