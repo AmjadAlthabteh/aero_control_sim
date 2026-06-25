@@ -16,6 +16,7 @@ struct BenchmarkConfig {
   size_t num_threads{std::thread::hardware_concurrency()};
   double sim_time_s{10.0};
   double dt_s{0.01};
+  unsigned int seed{42U};
   bool verbose{false};
 };
 
@@ -31,13 +32,15 @@ struct BenchmarkResult {
 void run_single_simulation(const acs::simulation::AircraftConfig& aircraft_cfg,
                            const acs::gnc::ControllerConfig& ctrl_cfg,
                            const acs::simulation::SensorConfig& sensor_cfg,
-                           const BenchmarkConfig& bench_cfg) {
+                           const BenchmarkConfig& bench_cfg,
+                           size_t sim_index) {
   acs::simulation::Aircraft aircraft(aircraft_cfg);
   acs::gnc::FlightController controller(ctrl_cfg);
 
   acs::simulation::SimulatorConfig sim_cfg{};
   sim_cfg.dt_s = bench_cfg.dt_s;
   sim_cfg.sim_time_s = bench_cfg.sim_time_s;
+  sim_cfg.seed = bench_cfg.seed + static_cast<unsigned int>(sim_index);
 
   acs::simulation::Simulator sim(sim_cfg, aircraft, controller, sensor_cfg);
 
@@ -57,9 +60,10 @@ void run_thread_batch(size_t num_sims,
                       const acs::simulation::AircraftConfig& aircraft_cfg,
                       const acs::gnc::ControllerConfig& ctrl_cfg,
                       const acs::simulation::SensorConfig& sensor_cfg,
-                      const BenchmarkConfig& bench_cfg) {
+                      const BenchmarkConfig& bench_cfg,
+                      size_t first_sim_index) {
   for (size_t i = 0; i < num_sims; ++i) {
-    run_single_simulation(aircraft_cfg, ctrl_cfg, sensor_cfg, bench_cfg);
+    run_single_simulation(aircraft_cfg, ctrl_cfg, sensor_cfg, bench_cfg, first_sim_index + i);
   }
 }
 
@@ -102,19 +106,21 @@ BenchmarkResult run_benchmark(const BenchmarkConfig& bench_cfg) {
       if (bench_cfg.verbose && (i + 1) % 10 == 0) {
         std::cout << "  Completed " << (i + 1) << "/" << bench_cfg.num_simulations << "\n";
       }
-      run_single_simulation(aircraft_cfg, ctrl_cfg, sensor_cfg, bench_cfg);
+      run_single_simulation(aircraft_cfg, ctrl_cfg, sensor_cfg, bench_cfg, i);
     }
   } else {
     // Multi-threaded execution
     std::vector<std::thread> threads;
     size_t sims_per_thread = bench_cfg.num_simulations / bench_cfg.num_threads;
     size_t remainder = bench_cfg.num_simulations % bench_cfg.num_threads;
+    size_t first_sim_index = 0;
 
     for (size_t t = 0; t < bench_cfg.num_threads; ++t) {
       size_t sims_for_this_thread = sims_per_thread + (t < remainder ? 1 : 0);
       threads.emplace_back(run_thread_batch, sims_for_this_thread,
                           std::ref(aircraft_cfg), std::ref(ctrl_cfg),
-                          std::ref(sensor_cfg), std::ref(bench_cfg));
+                          std::ref(sensor_cfg), std::ref(bench_cfg), first_sim_index);
+      first_sim_index += sims_for_this_thread;
     }
 
     for (auto& thread : threads) {
@@ -162,6 +168,8 @@ int main(int argc, char* argv[]) {
       config.sim_time_s = std::stod(argv[++i]);
     } else if (arg == "--dt" && i + 1 < argc) {
       config.dt_s = std::stod(argv[++i]);
+    } else if (arg == "--seed" && i + 1 < argc) {
+      config.seed = static_cast<unsigned int>(std::stoul(argv[++i]));
     } else if (arg == "--verbose" || arg == "-v") {
       config.verbose = true;
     } else if (arg == "--help" || arg == "-h") {
@@ -171,6 +179,7 @@ int main(int argc, char* argv[]) {
       std::cout << "  --threads N   Number of threads to use (default: hardware_concurrency)\n";
       std::cout << "  --time T      Simulation time in seconds (default: 10.0)\n";
       std::cout << "  --dt T        Simulation timestep in seconds (default: 0.01)\n";
+      std::cout << "  --seed N      Base RNG seed, incremented per simulation (default: 42)\n";
       std::cout << "  --verbose     Show progress during benchmark\n";
       std::cout << "  --help        Show this help message\n";
       return 0;
