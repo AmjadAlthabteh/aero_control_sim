@@ -105,3 +105,15 @@ target_include_directories(aero_control_sim_test_actuators PRIVATE
 target_link_libraries(aero_control_sim_test_actuators PRIVATE acs)
 
 add_test(NAME aero_control_sim_test_actuators COMMAND aero_control_sim_test_actuators)
+
+add_executable(aero_control_sim_test_mission_profile
+    test_mission_profile.cpp
+)
+
+target_include_directories(aero_control_sim_test_mission_profile PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+
+target_link_libraries(aero_control_sim_test_mission_profile PRIVATE acs)
+
+add_test(NAME aero_control_sim_test_mission_profile COMMAND aero_control_sim_test_mission_profile)

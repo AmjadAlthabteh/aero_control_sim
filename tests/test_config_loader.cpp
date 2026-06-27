@@ -19,6 +19,18 @@ int main() {
       "surface_limit_rad": 0.21,
       "throttle_limit": 0.77
     },
+    "targets": {
+      "altitude_m": 60.0,
+      "heading_deg": 10.0,
+      "airspeed_m_s": 17.0
+    },
+    "mission": {
+      "waypoints": [
+        {"time_s": 0.0},
+        {"time_s": 5.0, "altitude_m": 90.0, "heading_deg": 30.0},
+        {"time_s": 10.0, "airspeed_m_s": 21.0}
+      ]
+    },
     "actuators": {
       "surface_limit_rad": 0.19,
       "surface_deadband_rad": 0.02
@@ -39,6 +51,12 @@ int main() {
   assert(near(params.ctrl_cfg.throttle_limit, 0.77));
   assert(near(params.sim_cfg.actuators.surface_limit_rad, 0.19));
   assert(near(params.sim_cfg.actuators.surface_deadband_rad, 0.02));
+  assert(params.mission.size() == 3);
+  assert(near(params.mission.target_at(0.0).altitude_m, 60.0));
+  assert(near(params.mission.target_at(2.5).altitude_m, 75.0));
+  assert(near(params.mission.target_at(7.5).altitude_m, 90.0));
+  assert(near(params.mission.target_at(7.5).airspeed_m_s, 19.0));
+  assert(near(params.mission.target_at(5.0).heading_rad, 30.0 * acs::math::kDeg2Rad));
 
   return 0;
 }

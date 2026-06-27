@@ -14,6 +14,15 @@
     "pitch_deg": 0.0
   },
 
+  "mission": {
+    "waypoints": [
+      {"time_s": 0.0, "altitude_m": 60.0, "heading_deg": 20.0, "airspeed_m_s": 17.0},
+      {"time_s": 8.0, "altitude_m": 85.0, "heading_deg": 45.0, "airspeed_m_s": 18.5},
+      {"time_s": 18.0, "altitude_m": 70.0, "heading_deg": -20.0, "airspeed_m_s": 16.5},
+      {"time_s": 28.0, "altitude_m": 60.0, "heading_deg": 0.0, "airspeed_m_s": 17.0}
+    ]
+  },
+
   "aircraft": {
     "mass_kg": 2.0,
     "inertia_kg_m2": [

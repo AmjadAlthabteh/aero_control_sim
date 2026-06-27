@@ -26,6 +26,7 @@ add_library(acs
   src/simulation/Aircraft.cpp
   src/simulation/Wind.cpp
   src/simulation/Actuators.cpp
+  src/simulation/MissionProfile.cpp
   src/simulation/Simulator.cpp
   src/profiling/PerformanceProfiler.cpp
   src/analysis/Statistics.cpp
@@ -33,7 +34,6 @@ add_library(acs
 )
 
 target_include_directories(acs PUBLIC include)
-target_compile_features(acs PUBLIC cxx_std_17)
 
 if(MSVC)
   target_compile_options(acs PRIVATE /W4)

@@ -5,10 +5,13 @@
 #include "acs/math/Constants.h"
 #include "acs/math/Vector3.h"
 #include "acs/simulation/Aircraft.h"
+#include "acs/simulation/MissionProfile.h"
 #include "acs/simulation/Sensors.h"
 #include "acs/simulation/Simulator.h"
 
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace acs::config {
 
@@ -24,6 +27,7 @@ struct SimulationParameters {
   acs::gnc::ControllerConfig ctrl_cfg{};
   acs::simulation::SensorConfig sensor_cfg{};
   acs::simulation::SimulatorConfig sim_cfg{};
+  acs::simulation::MissionProfile mission{};
 };
 
 class ConfigLoader {
@@ -57,6 +61,41 @@ public:
         params.targets.roll_rad = targets.get("roll_deg").as_number() * acs::math::kDeg2Rad;
       if (targets.has("pitch_deg"))
         params.targets.pitch_rad = targets.get("pitch_deg").as_number() * acs::math::kDeg2Rad;
+    }
+
+    params.mission = acs::simulation::MissionProfile::hold(params.targets);
+
+    if (root.has("mission")) {
+      auto load_waypoint = [](const JsonValue& waypoint,
+                              const acs::gnc::ControllerTargets& base) {
+        acs::simulation::MissionWaypoint out{};
+        out.targets = base;
+        if (waypoint.has("time_s")) out.time_s = waypoint.get("time_s").as_number();
+        if (waypoint.has("altitude_m")) out.targets.altitude_m = waypoint.get("altitude_m").as_number();
+        if (waypoint.has("heading_deg"))
+          out.targets.heading_rad = waypoint.get("heading_deg").as_number() * acs::math::kDeg2Rad;
+        if (waypoint.has("airspeed_m_s")) out.targets.airspeed_m_s = waypoint.get("airspeed_m_s").as_number();
+        if (waypoint.has("roll_deg")) out.targets.roll_rad = waypoint.get("roll_deg").as_number() * acs::math::kDeg2Rad;
+        if (waypoint.has("pitch_deg")) out.targets.pitch_rad = waypoint.get("pitch_deg").as_number() * acs::math::kDeg2Rad;
+        return out;
+      };
+
+      const auto mission = root.get("mission");
+      const JsonValue waypoint_container =
+          mission.is_object() && mission.has("waypoints")
+              ? mission.get("waypoints")
+              : mission;
+      const auto& waypoint_values = waypoint_container.as_array();
+
+      std::vector<acs::simulation::MissionWaypoint> waypoints;
+      waypoints.reserve(waypoint_values.size());
+      acs::gnc::ControllerTargets inherited = params.targets;
+      for (const auto& waypoint_value : waypoint_values) {
+        const auto waypoint = load_waypoint(waypoint_value, inherited);
+        inherited = waypoint.targets;
+        waypoints.push_back(waypoint);
+      }
+      params.mission = acs::simulation::MissionProfile(std::move(waypoints));
     }
 
     // Load aircraft configuration
@@ -239,6 +278,8 @@ public:
     params.sim_cfg.seed = params.seed;
     params.sim_cfg.actuators.surface_limit_rad = params.aircraft_cfg.aero.aileron_limit_rad;
     params.ctrl_cfg.surface_limit_rad = params.aircraft_cfg.aero.aileron_limit_rad;
+
+    params.mission = acs::simulation::MissionProfile::hold(params.targets);
 
     return params;
   }

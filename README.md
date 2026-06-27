@@ -14,6 +14,7 @@
 - actuator dynamics: first-order lag + rate limiting, with stuck-surface fault injection
 - imu/gps/barometer sensors with gaussian noise, bias random walk, and dropout simulation
 - roll/pitch/heading/altitude hold pid controllers
+- time-scheduled mission profiles with interpolated altitude, heading, airspeed, roll, and pitch targets
 - csv telemetry logging
 
 ### performance & testing (new!)
@@ -113,6 +114,22 @@ typical performance metrics (example system):
 ```bash
 ./build/aero-control-system-sim --target-alt 120 --target-heading-deg -45 --target-airspeed 20
 ```
+
+### run a scheduled mission from config
+```json
+{
+  "targets": {"altitude_m": 60, "heading_deg": 20, "airspeed_m_s": 17},
+  "mission": {
+    "waypoints": [
+      {"time_s": 0, "altitude_m": 60, "heading_deg": 20, "airspeed_m_s": 17},
+      {"time_s": 8, "altitude_m": 85, "heading_deg": 45, "airspeed_m_s": 18.5},
+      {"time_s": 18, "altitude_m": 70, "heading_deg": -20, "airspeed_m_s": 16.5}
+    ]
+  }
+}
+```
+
+Mission waypoint fields inherit from the previous waypoint, so a waypoint can change only the target that matters. Headings interpolate along the shortest angular path, and telemetry records both the active target values and `mission_segment`.
 
 ### benchmark throughput
 ```bash

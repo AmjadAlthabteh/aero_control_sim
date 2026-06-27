@@ -98,6 +98,8 @@ int main(int argc, char* argv[]) {
   targets.roll_rad = 0.0;
   targets.pitch_rad = 0.0;
   targets.airspeed_m_s = 17.0;
+  acs::simulation::MissionProfile mission = acs::simulation::MissionProfile::hold(targets);
+  bool mission_from_config = false;
 
   // small fixed-wing-ish airframe
   acs::simulation::AircraftConfig aircraft_cfg{};
@@ -140,6 +142,8 @@ int main(int argc, char* argv[]) {
       ctrl_cfg = params.ctrl_cfg;
       sensor_cfg = params.sensor_cfg;
       sim_cfg = params.sim_cfg;
+      mission = params.mission;
+      mission_from_config = params.mission.size() > 1;
     } catch (const std::exception& e) {
       std::cerr << "Error: Failed to load config: " << e.what() << "\n";
       return 1;
@@ -270,12 +274,15 @@ int main(int argc, char* argv[]) {
   sim_cfg.dt_s = dt_s;
   sim_cfg.sim_time_s = sim_time_s;
   sim_cfg.seed = seed;
+  if (!mission_from_config) {
+    mission = acs::simulation::MissionProfile::hold(targets);
+  }
 
   acs::simulation::Aircraft aircraft(aircraft_cfg);
   acs::gnc::FlightController controller(ctrl_cfg);
   acs::simulation::Simulator sim(sim_cfg, aircraft, controller, sensor_cfg);
 
-  sim.run(targets, telemetry_path);
+  sim.run(mission, telemetry_path);
 
   std::cout << "done, wrote " << telemetry_path << "\n";
   return 0;

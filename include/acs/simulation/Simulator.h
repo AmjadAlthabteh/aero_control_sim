@@ -5,6 +5,7 @@
 #include "acs/physics/RigidBody6Dof.h"
 #include "acs/simulation/Actuators.h"
 #include "acs/simulation/Aircraft.h"
+#include "acs/simulation/MissionProfile.h"
 #include "acs/simulation/Sensors.h"
 #include "acs/simulation/Telemetry.h"
 #include "acs/simulation/Wind.h"
@@ -31,6 +32,7 @@ public:
             const SensorConfig& sensor_cfg);
 
   void run(const acs::gnc::ControllerTargets& targets, const std::string& telemetry_path);
+  void run(const MissionProfile& mission, const std::string& telemetry_path);
 
 private:
   SimulatorConfig sim_cfg_{};

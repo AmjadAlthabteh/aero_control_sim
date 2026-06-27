@@ -120,6 +120,10 @@ static acs::physics::RigidBodyState make_initial_state() {
 }
 
 void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::string& telemetry_path) {
+  run(MissionProfile::hold(targets), telemetry_path);
+}
+
+void Simulator::run(const MissionProfile& mission, const std::string& telemetry_path) {
   using acs::math::Matrix3;
   using acs::math::Vector3;
   using acs::physics::BodyForcesMoments;
@@ -163,6 +167,9 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
   row << std::fixed << std::setprecision(6);
 
   for (int i = 0; i < steps; ++i) {
+    const acs::gnc::ControllerTargets targets = mission.target_at(t);
+    const std::size_t mission_segment = mission.segment_index_at(t);
+
     if (enable_profiling) {
       auto& profiler = acs::profiling::PerformanceProfiler::instance();
       profiler.begin_section("simulation_step");
@@ -294,7 +301,7 @@ void Simulator::run(const acs::gnc::ControllerTargets& targets, const std::strin
       row << u_cmd.aileron_rad << "," << u_cmd.elevator_rad << "," << u_cmd.rudder_rad << "," << u_cmd.throttle_01 << ",";
       row << (baro.valid ? 1 : 0) << "," << (gps.valid ? 1 : 0) << ",";
       row << targets.altitude_m << "," << targets.heading_rad << "," << targets.airspeed_m_s << "," << targets.roll_rad << ","
-          << targets.pitch_rad;
+          << targets.pitch_rad << "," << mission_segment;
       log->write_row(row.str());
     }
 
