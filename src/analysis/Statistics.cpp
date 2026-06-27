@@ -339,6 +339,11 @@ double compute_percentile(std::vector<double> data, double percentile) {
   if (data.empty()) return 0.0;
   if (!std::isfinite(percentile)) return std::numeric_limits<double>::quiet_NaN();
 
+  data.erase(std::remove_if(data.begin(), data.end(),
+                            [](double value) { return !std::isfinite(value); }),
+             data.end());
+  if (data.empty()) return 0.0;
+
   percentile = std::clamp(percentile, 0.0, 100.0);
   std::sort(data.begin(), data.end());
 
