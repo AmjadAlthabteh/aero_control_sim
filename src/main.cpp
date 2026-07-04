@@ -38,7 +38,7 @@ static void print_help(const char* argv0) {
   std::cout << "  --gyro-bias X Y Z      IMU gyro bias in body frame, rad/s (default 0)\n";
   std::cout << "  --accel-bias-rw S      IMU accel bias RW 1-sigma, m/s^2/sqrt(s) (default 0)\n";
   std::cout << "  --gyro-bias-rw S       IMU gyro bias RW 1-sigma, rad/s/sqrt(s) (default 0)\n";
-  std::cout << "  --hold-last-on-dropout 0|1 (default 1)\n";
+  std::cout << "  --hold-last-on-dropout 0|1  Hold last valid sensor sample on dropout (default 1)\n";
   std::cout << "  --target-alt M         Altitude hold target (default 60)\n";
   std::cout << "  --target-heading-deg D Heading hold target, deg (default 20)\n";
   std::cout << "  --target-airspeed MPS  Airspeed target, m/s (default 17)\n";
@@ -284,6 +284,10 @@ int main(int argc, char* argv[]) {
 
   sim.run(mission, telemetry_path);
 
-  std::cout << "done, wrote " << telemetry_path << "\n";
+  if (telemetry_path.empty()) {
+    std::cout << "done, telemetry disabled\n";
+  } else {
+    std::cout << "done, wrote " << telemetry_path << "\n";
+  }
   return 0;
 }

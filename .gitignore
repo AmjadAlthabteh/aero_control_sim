@@ -6,6 +6,8 @@
 
 # Outputs
 /out.csv
+/telemetry*.csv
+/temp*.csv
 
 # IDE
 /.vs/

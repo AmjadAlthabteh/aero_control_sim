@@ -105,6 +105,11 @@ typical performance metrics (example system):
 # outputs telemetry.csv and displays performance report
 ```
 
+### run without telemetry output
+```bash
+./build/aero-control-system-sim --no-telemetry
+```
+
 ### run with wind + actuator dynamics + deterministic seed
 ```bash
 ./build/aero-control-system-sim --seed 123 --wind 3.0 0.0 0.0 --gust-std 1.0 --gust-tau 2.0 --surface-tau 0.05 --surface-rate 3.0
