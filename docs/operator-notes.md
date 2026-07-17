@@ -11,3 +11,9 @@
 - Open `telemetry.csv` after a run and confirm the timestamp column increases steadily.
 - Check target columns first when validating mission-profile behavior.
 - Compare attitude and altitude trends before tuning controller gains.
+
+## Wind Scenario Notes
+
+- Start with a constant wind vector before adding gust noise.
+- Increase `--gust-std` gradually so controller response changes are easy to isolate.
+- Reuse the same `--seed` when comparing wind model changes.
