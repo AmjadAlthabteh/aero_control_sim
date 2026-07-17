@@ -17,3 +17,9 @@
 - Start with a constant wind vector before adding gust noise.
 - Increase `--gust-std` gradually so controller response changes are easy to isolate.
 - Reuse the same `--seed` when comparing wind model changes.
+
+## Actuator Checks
+
+- Confirm surface rate limits are documented with the scenario under test.
+- Test stuck-surface faults one axis at a time.
+- Review control commands and achieved deflections together when diagnosing lag.
