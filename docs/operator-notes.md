@@ -23,3 +23,9 @@
 - Confirm surface rate limits are documented with the scenario under test.
 - Test stuck-surface faults one axis at a time.
 - Review control commands and achieved deflections together when diagnosing lag.
+
+## Mission Profiles
+
+- Keep waypoint times strictly increasing.
+- Leave unchanged waypoint fields omitted so inherited targets stay obvious.
+- Use heading changes smaller than 180 degrees when validating interpolation manually.
