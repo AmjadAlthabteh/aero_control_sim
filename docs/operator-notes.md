@@ -35,3 +35,9 @@
 - Disable telemetry output when measuring pure simulation throughput.
 - Record the simulation count, thread count, and build type with each benchmark.
 - Repeat short benchmark runs before comparing small performance differences.
+
+## Focused Test Runs
+
+- Use `ctest -R` to rerun the smallest relevant test group while iterating.
+- Run the full suite before pushing behavior changes.
+- Keep failing telemetry samples when they explain an analyzer or controller issue.
