@@ -170,6 +170,8 @@ Mission waypoint fields inherit from the previous waypoint, so a waypoint can ch
 ./build/acs-benchmark --sims 20 --verbose
 ```
 
+Benchmark runs increment the base `--seed` for each simulation, so repeated runs are deterministic with the same options.
+
 ### analyze telemetry
 ```bash
 ./build/acs-analyzer telemetry.csv
