@@ -116,6 +116,13 @@ typical performance metrics (example system):
 ./build/aero-control-system-sim --no-telemetry
 ```
 
+### run from a config file
+```bash
+./build/aero-control-system-sim --config config_example.json
+```
+
+Command-line options after `--config` can override loaded values for quick scenario sweeps.
+
 ### run with wind + actuator dynamics + deterministic seed
 ```bash
 ./build/aero-control-system-sim --seed 123 --wind 3.0 0.0 0.0 --gust-std 1.0 --gust-tau 2.0 --surface-tau 0.05 --surface-rate 3.0
