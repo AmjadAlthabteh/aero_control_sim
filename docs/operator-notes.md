@@ -40,6 +40,7 @@
 - Disable telemetry output when measuring pure simulation throughput.
 - Record the simulation count, thread count, and build type with each benchmark.
 - Repeat short benchmark runs before comparing small performance differences.
+- Run benchmarks on an otherwise idle system when collecting baseline numbers.
 
 ## Focused Test Runs
 
