@@ -135,6 +135,11 @@ Use the same `--seed` when comparing controller or sensor changes across runs.
 ./build/aero-control-system-sim --target-alt 120 --target-heading-deg -45 --target-airspeed 20
 ```
 
+### run with sensor dropout
+```bash
+./build/aero-control-system-sim --gps-dropout-prob 0.05 --baro-dropout-prob 0.02 --hold-last-on-dropout 1
+```
+
 ### run a scheduled mission from config
 ```json
 {
