@@ -130,6 +130,11 @@ Command-line options after `--config` can override loaded values for quick scena
 
 Use the same `--seed` when comparing controller or sensor changes across runs.
 
+### run with an actuator fault
+```bash
+./build/aero-control-system-sim --surface-tau 0.08 --surface-rate 2.5 --stuck-elevator-time 12
+```
+
 ### run with custom hold targets
 ```bash
 ./build/aero-control-system-sim --target-alt 120 --target-heading-deg -45 --target-airspeed 20
