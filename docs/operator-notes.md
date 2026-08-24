@@ -19,6 +19,7 @@
 - Start with a constant wind vector before adding gust noise.
 - Increase `--gust-std` gradually so controller response changes are easy to isolate.
 - Reuse the same `--seed` when comparing wind model changes.
+- Keep mean wind and gust settings in the run notes for replayability.
 
 ## Actuator Checks
 
