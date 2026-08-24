@@ -5,6 +5,7 @@
 - Build in release mode before collecting performance numbers.
 - Run the simulator once without custom flags to confirm telemetry output is created.
 - Keep the terminal output from the first run for quick comparison against later changes.
+- Save the exact command line used for any run that produces a reference telemetry file.
 
 ## Telemetry Review
 
