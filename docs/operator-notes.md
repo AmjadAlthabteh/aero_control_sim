@@ -47,3 +47,4 @@
 - Use `ctest -R` to rerun the smallest relevant test group while iterating.
 - Run the full suite before pushing behavior changes.
 - Keep failing telemetry samples when they explain an analyzer or controller issue.
+- Reconfigure CMake after adding or renaming test source files.
