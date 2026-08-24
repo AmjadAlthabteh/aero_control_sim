@@ -41,6 +41,8 @@
 
 ## build
 
+Use an out-of-source build directory so generated files stay separate from source files.
+
 ### linux/macos
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
