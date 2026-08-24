@@ -26,6 +26,7 @@
 - Confirm surface rate limits are documented with the scenario under test.
 - Test stuck-surface faults one axis at a time.
 - Review control commands and achieved deflections together when diagnosing lag.
+- Include actuator deadband values when comparing small control inputs.
 
 ## Mission Profiles
 
