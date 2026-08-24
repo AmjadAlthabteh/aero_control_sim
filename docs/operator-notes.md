@@ -12,6 +12,7 @@
 - Open `telemetry.csv` after a run and confirm the timestamp column increases steadily.
 - Check target columns first when validating mission-profile behavior.
 - Compare attitude and altitude trends before tuning controller gains.
+- Confirm the configured telemetry path before overwriting a prior run.
 
 ## Wind Scenario Notes
 
