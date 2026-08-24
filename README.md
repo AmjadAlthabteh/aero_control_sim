@@ -53,6 +53,10 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
+### build options
+- `ACS_BUILD_TOOLS` controls the benchmark and analyzer executables.
+- `AERO_CONTROL_SIM_BUILD_TESTS` controls the ctest test targets.
+
 ## executables
 
 the build process creates several executables:
