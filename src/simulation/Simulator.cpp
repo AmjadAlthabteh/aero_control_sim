@@ -286,7 +286,8 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
 
       row.str(std::string{});
       row.clear();
-      row << t << ",";
+      // x has already advanced one integration step, so its timestamp is t + dt.
+      row << (t + sim_cfg_.dt_s) << ",";
       row << x.position_ned_m.x << "," << x.position_ned_m.y << "," << x.position_ned_m.z << ",";
       row << x.velocity_body_m_s.x << "," << x.velocity_body_m_s.y << "," << x.velocity_body_m_s.z << ",";
       row << x.omega_body_rad_s.x << "," << x.omega_body_rad_s.y << "," << x.omega_body_rad_s.z << ",";

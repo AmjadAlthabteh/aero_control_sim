@@ -122,6 +122,7 @@ void test_aero_model_forces() {
     // Should have negative z-force (lift) due to positive alpha
     assert(fm_lift.force_body_n.z < 0.0); // Lift opposes downward component
     assert(fm_lift.alpha_rad > 0.0); // Positive angle of attack
+    assert(fm_lift.force_body_n.x < 0.0); // Drag opposes forward motion
 
     // Test 3: Throttle produces forward thrust
     acs::aero::ControlInputs u_throttle{};
@@ -142,7 +143,8 @@ void test_aero_model_forces() {
     u_elevator.elevator_rad = 0.1;
 
     acs::aero::AeroForcesMoments fm_pitch = model.evaluate(v_forward, omega_zero, 1.225, u_elevator);
-    assert(std::fabs(fm_pitch.moment_body_n_m.y) > 0.0); // Should have pitch moment
+    const auto fm_pitch_neutral = model.evaluate(v_forward, omega_zero, 1.225, u_zero);
+    assert(fm_pitch.moment_body_n_m.y > fm_pitch_neutral.moment_body_n_m.y); // Positive command pitches up
 
     std::cout << "  ✓ AeroModel force calculations passed" << std::endl;
 }

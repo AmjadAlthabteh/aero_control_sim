@@ -55,7 +55,7 @@ struct AeroParams {
 
   // control derivatives
   double cl_da{0.08};
-  double cm_de{-1.0};
+  double cm_de{1.0};       // positive controller command produces nose-up moment
   double cn_dr{0.06};
 
   // damping derivatives (scaled by p,q,r nondimensional rates)

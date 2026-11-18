@@ -30,8 +30,9 @@ AeroForcesMoments AeroModel::evaluate(const acs::math::Vector3& velocity_body_m_
 
   // angle of attack and sideslip.
   // body frame is frd (x fwd, y right, z down).
-  // alpha is defined positive for nose-up, so we flip the sign on w.
-  const double alpha = std::atan2(-w, std::max(1e-6, u));
+  // In FRD, positive body-z velocity is downward relative to the air and
+  // therefore corresponds to positive angle of attack.
+  const double alpha = std::atan2(w, std::max(1e-6, u));
   const double beta = std::asin(clamp(v / vmag, -1.0, 1.0));
 
   const double qbar = 0.5 * rho_kg_m3 * v2;
@@ -67,7 +68,8 @@ AeroForcesMoments AeroModel::evaluate(const acs::math::Vector3& velocity_body_m_
   // - cx is mostly drag, grows with alpha^2 (induced + form drag lumped)
   // - cz provides lift in the body z-axis (down positive), so lift is -cz
   // - cy is sideforce from sideslip
-  c.cx = params_.cx0 + params_.cx_alpha2 * alpha * alpha;
+  // Drag opposes forward motion, hence negative body-x force for forward flight.
+  c.cx = -(params_.cx0 + params_.cx_alpha2 * alpha * alpha);
   c.cy = params_.cy0 + params_.cy_beta * beta;
   c.cz = params_.cz0 + params_.cz_alpha * alpha * stall_factor;
 

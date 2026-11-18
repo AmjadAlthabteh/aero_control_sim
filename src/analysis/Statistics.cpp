@@ -160,6 +160,18 @@ TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::stri
   const size_t i_r = find_idx("r_rps");
   const size_t i_target_alt = find_idx("target_alt_m");
 
+  report.sample_count = data.size();
+  const char* current_schema_fields[] = {
+      "t_s", "alt_m", "airspeed_mps", "roll_rad", "pitch_rad", "yaw_rad",
+      "aileron_rad", "elevator_rad", "rudder_rad", "target_alt_m",
+      "target_heading_rad", "target_airspeed_mps", "mission_segment"};
+  for (const char* field : current_schema_fields) {
+    if (find_idx(field) == static_cast<size_t>(-1)) {
+      report.has_current_schema = false;
+      report.warnings.emplace_back(std::string("missing telemetry field: ") + field);
+    }
+  }
+
   std::vector<double> t_s, roll, pitch, yaw, altitude, airspeed;
   std::vector<double> aileron, elevator, rudder;
   std::vector<double> p, q, r;
@@ -171,10 +183,17 @@ TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::stri
 
   double target_altitude_m = report.target_altitude_m;
   bool target_alt_from_telemetry = false;
+  size_t nonfinite_flight_rows = 0;
 
   for (const auto& row : data) {
     const double alt = get(row, i_alt);
     const double ts = get(row, i_t);
+
+    if (!std::isfinite(alt) || !std::isfinite(get(row, i_airspeed)) ||
+        !std::isfinite(get(row, i_roll)) || !std::isfinite(get(row, i_pitch)) ||
+        !std::isfinite(get(row, i_yaw))) {
+      ++nonfinite_flight_rows;
+    }
 
     if (std::isfinite(get(row, i_roll))) roll.push_back(get(row, i_roll));
     if (std::isfinite(get(row, i_pitch))) pitch.push_back(get(row, i_pitch));
@@ -201,6 +220,38 @@ TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::stri
 
   report.target_altitude_m = target_altitude_m;
   report.target_altitude_from_telemetry = target_alt_from_telemetry;
+  report.has_nonfinite_flight_data = nonfinite_flight_rows != 0;
+  if (report.has_nonfinite_flight_data) {
+    report.warnings.emplace_back(std::to_string(nonfinite_flight_rows) +
+                                 " row(s) contain non-finite core flight-state values");
+  }
+
+  if (t_s.size() >= 2) {
+    report.start_time_s = t_s.front();
+    report.end_time_s = t_s.back();
+    report.duration_s = report.end_time_s - report.start_time_s;
+    std::vector<double> intervals;
+    intervals.reserve(t_s.size() - 1);
+    for (size_t i = 1; i < t_s.size(); ++i) {
+      const double interval = t_s[i] - t_s[i - 1];
+      if (std::isfinite(interval) && interval > 0.0) intervals.push_back(interval);
+    }
+    if (!intervals.empty()) {
+      const double median_dt = compute_percentile(intervals, 50.0);
+      report.sample_rate_hz = 1.0 / median_dt;
+      const double tolerance = std::max(1e-9, median_dt * 1e-3);
+      report.timing_uniform = std::all_of(intervals.begin(), intervals.end(), [&](double interval) {
+        return std::abs(interval - median_dt) <= tolerance;
+      });
+      if (!report.timing_uniform) report.warnings.emplace_back("nonuniform telemetry timestamps");
+    } else {
+      report.timing_uniform = false;
+      report.warnings.emplace_back("timestamps are not strictly increasing");
+    }
+  } else {
+    report.timing_uniform = false;
+    report.warnings.emplace_back("fewer than two valid timestamp/altitude samples");
+  }
 
   // Compute statistics
   report.roll_rad.compute(roll);
@@ -221,7 +272,8 @@ TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::stri
   const double max_attitude = 1.57;  // ~90 degrees
   const double max_abs_roll = std::max(std::abs(report.roll_rad.max), std::abs(report.roll_rad.min));
   const double max_abs_pitch = std::max(std::abs(report.pitch_rad.max), std::abs(report.pitch_rad.min));
-  report.is_stable = (report.altitude_m.max < max_altitude) &&
+  report.is_stable = !report.has_nonfinite_flight_data &&
+                     (report.altitude_m.max < max_altitude) &&
                      (max_abs_roll < max_attitude) &&
                      (max_abs_pitch < max_attitude);
 
@@ -274,6 +326,17 @@ TelemetryAnalyzer::AnalysisReport TelemetryAnalyzer::analyze_csv(const std::stri
 void TelemetryAnalyzer::print_report(const AnalysisReport& report) {
   std::cout << "\n=== Telemetry Analysis Report ===\n\n";
 
+  std::cout << "Dataset:\n";
+  std::cout << "--------\n";
+  std::cout << "Samples: " << report.sample_count << "\n";
+  std::cout << "Timestamp span: " << std::fixed << std::setprecision(3)
+            << report.duration_s << " s (" << report.start_time_s << " to " << report.end_time_s << ")\n";
+  std::cout << "Sampling rate: " << std::fixed << std::setprecision(3)
+            << report.sample_rate_hz << " Hz\n";
+  std::cout << "Schema: " << (report.has_current_schema ? "CURRENT" : "INCOMPLETE/LEGACY") << "\n";
+  for (const auto& warning : report.warnings) std::cout << "Warning: " << warning << "\n";
+  std::cout << "\n";
+
   auto print_stats = [](const std::string& name, const StatsSummary<double>& stats, const std::string& unit) {
     std::cout << name << ":\n";
     std::cout << "  Mean: " << std::fixed << std::setprecision(4) << stats.mean << " " << unit << "\n";
@@ -291,6 +354,11 @@ void TelemetryAnalyzer::print_report(const AnalysisReport& report) {
   std::cout << "------------\n";
   print_stats("Altitude", report.altitude_m, "m");
   print_stats("Airspeed", report.airspeed_m_s, "m/s");
+  std::cout << "Airspeed conversion (for aviation displays only):\n";
+  std::cout << "  Mean: " << std::fixed << std::setprecision(4)
+            << report.airspeed_m_s.mean * 1.9438444924406 << " kt\n";
+  std::cout << "  Range: [" << report.airspeed_m_s.min * 1.9438444924406 << ", "
+            << report.airspeed_m_s.max * 1.9438444924406 << "] kt\n\n";
 
   std::cout << "Control Surfaces:\n";
   std::cout << "----------------\n";

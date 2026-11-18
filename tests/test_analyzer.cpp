@@ -30,6 +30,12 @@ int main() {
   const auto report = acs::analysis::TelemetryAnalyzer::analyze_csv(path);
 
   assert(report.target_altitude_from_telemetry);
+  assert(report.sample_count == 5);
+  assert(near(report.duration_s, 4.0));
+  assert(near(report.sample_rate_hz, 1.0));
+  assert(report.timing_uniform);
+  assert(!report.has_current_schema);
+  assert(!report.has_nonfinite_flight_data);
   assert(near(report.target_altitude_m, 100.0));
   assert(near(report.steady_state_error, 0.0));
   assert(near(report.altitude_p95_m, 104.0, 1e-9));

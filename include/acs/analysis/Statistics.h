@@ -65,6 +65,17 @@ struct TimeSeriesStats {
 class TelemetryAnalyzer {
 public:
   struct AnalysisReport {
+    // Dataset metadata and validation
+    size_t sample_count{0};
+    double start_time_s{0.0};
+    double end_time_s{0.0};
+    double duration_s{0.0};
+    double sample_rate_hz{0.0};
+    bool timing_uniform{true};
+    bool has_current_schema{true};
+    bool has_nonfinite_flight_data{false};
+    std::vector<std::string> warnings;
+
     // Attitude stats
     StatsSummary<double> roll_rad;
     StatsSummary<double> pitch_rad;

@@ -4,6 +4,14 @@ add_executable(aero_control_sim_test_sanity
 
 add_test(NAME aero_control_sim_test_sanity COMMAND aero_control_sim_test_sanity)
 
+add_executable(aero_control_sim_test_aerodynamics_physics
+    test_aerodynamics_physics.cpp
+)
+
+target_link_libraries(aero_control_sim_test_aerodynamics_physics PRIVATE acs)
+
+add_test(NAME aero_control_sim_test_aerodynamics_physics COMMAND aero_control_sim_test_aerodynamics_physics)
+
 add_executable(aero_control_sim_test_pid
     test_pid.cpp
 )
