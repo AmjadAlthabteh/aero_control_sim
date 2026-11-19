@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 
 #include "acs/math/Constants.h"
 #include "acs/physics/Atmosphere.h"
@@ -141,7 +142,10 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
   }
   std::unique_ptr<Telemetry> log;
   if (enable_telemetry) {
-    log = std::make_unique<Telemetry>(telemetry_path);
+    log = std::make_unique<Telemetry>(telemetry_path, sim_cfg_.dt_s);
+    if (!log->ok() || !log->metadata_ok()) {
+      throw std::runtime_error("failed to create telemetry CSV and metadata sidecar: " + telemetry_path);
+    }
     log->write_header();
   }
 
