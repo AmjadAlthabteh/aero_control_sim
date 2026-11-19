@@ -191,6 +191,8 @@ ctest --test-dir build -C Release -R statistics_utils --output-on-failure
 ## notes
 the aero model is intentionally lightweight (linear coefficients + simple control derivatives). it is good enough to demonstrate realistic couplings (aoa, sideslip, damping moments) and closed-loop stabilization without pulling in a full coefficient database.
 
+The simulator validates key command-line ranges before running, including timestep, simulation time, dropout probabilities, altitude, and airspeed targets.
+
 ## performance tips
 - use release builds (`-DCMAKE_BUILD_TYPE=Release`) for maximum performance
 - benchmark mode disables telemetry I/O for pure compute performance
