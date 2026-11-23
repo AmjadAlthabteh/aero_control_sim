@@ -25,6 +25,12 @@ void PID::reset() {
 }
 
 double PID::update(double setpoint, double measurement, double dt_s) {
+  // A non-finite sensor or command sample must not poison the controller's
+  // persistent derivative/integrator state or reach an actuator.
+  if (!std::isfinite(setpoint) || !std::isfinite(measurement)) {
+    return 0.0;
+  }
+
   const double error = setpoint - measurement;
   const bool dt_ok = std::isfinite(dt_s) && dt_s > 0.0;
 

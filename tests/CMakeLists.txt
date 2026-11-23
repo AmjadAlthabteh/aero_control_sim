@@ -22,6 +22,14 @@ target_include_directories(aero_control_sim_test_pid PRIVATE
 
 add_test(NAME aero_control_sim_test_pid COMMAND aero_control_sim_test_pid)
 
+add_executable(aero_control_sim_test_gnc_pid
+    test_gnc_pid.cpp
+)
+
+target_link_libraries(aero_control_sim_test_gnc_pid PRIVATE acs)
+
+add_test(NAME aero_control_sim_test_gnc_pid COMMAND aero_control_sim_test_gnc_pid)
+
 add_executable(aero_control_sim_test_analyzer
     test_analyzer.cpp
 )
