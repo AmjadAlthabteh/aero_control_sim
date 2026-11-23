@@ -67,7 +67,7 @@ AeroForcesMoments AeroModel::evaluate(const acs::math::Vector3& velocity_body_m_
   // simple aero model:
   // - cx is mostly drag, grows with alpha^2 (induced + form drag lumped)
   // - cz provides lift in the body z-axis (down positive), so lift is -cz
-  // - cy is sideforce from sideslip
+  // - cy opposes sideslip: positive beta (velocity right) produces force left
   // Drag opposes forward motion, hence negative body-x force for forward flight.
   c.cx = -(params_.cx0 + params_.cx_alpha2 * alpha * alpha);
   c.cy = params_.cy0 + params_.cy_beta * beta;

@@ -6,6 +6,7 @@
 #include "acs/math/Quaternion.h"
 #include "acs/math/Matrix3.h"
 #include "acs/aero/AeroModel.h"
+#include "acs/gnc/FlightController.h"
 #include "acs/physics/RigidBody6Dof.h"
 #include "acs/physics/Atmosphere.h"
 
@@ -131,20 +132,39 @@ void test_aero_model_forces() {
     acs::aero::AeroForcesMoments fm_thrust = model.evaluate(v_forward, omega_zero, 1.225, u_throttle);
     assert(fm_thrust.force_body_n.x > fm_lift.force_body_n.x); // More forward force
 
-    // Test 4: Aileron produces rolling moment
+    // Test 4: positive virtual surface commands produce positive body-axis
+    // moments (+L roll-right, +M nose-up, +N nose-right).
     acs::aero::ControlInputs u_aileron{};
     u_aileron.aileron_rad = 0.1;
 
     acs::aero::AeroForcesMoments fm_roll = model.evaluate(v_forward, omega_zero, 1.225, u_aileron);
-    assert(std::fabs(fm_roll.moment_body_n_m.x) > 0.0); // Should have roll moment
+    const auto fm_neutral = model.evaluate(v_forward, omega_zero, 1.225, u_zero);
+    assert(fm_roll.moment_body_n_m.x > fm_neutral.moment_body_n_m.x);
 
-    // Test 5: Elevator produces pitching moment
     acs::aero::ControlInputs u_elevator{};
     u_elevator.elevator_rad = 0.1;
 
     acs::aero::AeroForcesMoments fm_pitch = model.evaluate(v_forward, omega_zero, 1.225, u_elevator);
-    const auto fm_pitch_neutral = model.evaluate(v_forward, omega_zero, 1.225, u_zero);
-    assert(fm_pitch.moment_body_n_m.y > fm_pitch_neutral.moment_body_n_m.y); // Positive command pitches up
+    assert(fm_pitch.moment_body_n_m.y > fm_neutral.moment_body_n_m.y);
+
+    acs::aero::ControlInputs u_rudder{};
+    u_rudder.rudder_rad = 0.1;
+    const auto fm_yaw = model.evaluate(v_forward, omega_zero, 1.225, u_rudder);
+    assert(fm_yaw.moment_body_n_m.z > fm_neutral.moment_body_n_m.z);
+
+    // Test 5: static lateral force and all angular-rate derivatives oppose
+    // the disturbance in the FRD body frame.
+    const auto fm_beta = model.evaluate(acs::math::Vector3(20.0, 2.0, 0.0),
+                                        omega_zero, 1.225, u_zero);
+    assert(fm_beta.beta_rad > 0.0);
+    assert(fm_beta.force_body_n.y < 0.0);
+
+    const auto fm_rates = model.evaluate(acs::math::Vector3(20.0, 0.0, 0.0),
+                                         acs::math::Vector3(0.1, 0.1, 0.1),
+                                         1.225, u_zero);
+    assert(fm_rates.moment_body_n_m.x < 0.0);
+    assert(fm_rates.moment_body_n_m.y < 0.0);
+    assert(fm_rates.moment_body_n_m.z < 0.0);
 
     std::cout << "  ✓ AeroModel force calculations passed" << std::endl;
 }
@@ -195,6 +215,24 @@ void test_rigid_body_dynamics() {
     assert(near(deriv_gravity.velocity_body_m_s.z, 9.81, 0.01));
 
     std::cout << "  ✓ RigidBody6Dof dynamics passed" << std::endl;
+}
+
+void test_controller_rudder_coordination() {
+    acs::gnc::FlightController controller(acs::gnc::ControllerConfig{});
+    acs::gnc::ControllerTargets targets{};
+    targets.airspeed_m_s = 15.0;
+    acs::gnc::EstimatedState est{};
+    est.airspeed_m_s = 15.0;
+
+    est.sideslip_rad = 0.1;
+    const auto positive_beta = controller.update(targets, est, 0.01);
+    assert(positive_beta.rudder_rad > 0.0);
+
+    controller.reset();
+    est.sideslip_rad = 0.0;
+    est.yaw_rate_rad_s = 0.1;
+    const auto positive_yaw_rate = controller.update(targets, est, 0.01);
+    assert(positive_yaw_rate.rudder_rad < 0.0);
 }
 
 // Test atmosphere model
@@ -266,6 +304,7 @@ int main() {
         test_quaternion_operations();
         test_aero_model_forces();
         test_rigid_body_dynamics();
+        test_controller_rudder_coordination();
         test_atmosphere_model();
         test_energy_conservation();
 

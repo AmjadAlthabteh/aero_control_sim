@@ -34,6 +34,7 @@ struct EstimatedState {
 
   double altitude_m{};
   double airspeed_m_s{};
+  double sideslip_rad{};
   double yaw_rate_rad_s{};
 };
 

@@ -60,8 +60,11 @@ acs::aero::ControlInputs FlightController::update(const ControllerTargets& targe
   double throttle = 0.55 + 0.04 * v_err + 0.01 * alt_err;
   throttle = clamp(throttle, 0.0, cfg_.throttle_limit);
 
-  // rudder: lightly damps yaw rate and nudges beta towards zero (we don't estimate beta here, so use yaw rate only).
-  const double rudder = clamp(-0.15 * est.yaw_rate_rad_s + 0.25 * hdg_err, -cfg_.surface_limit_rad, cfg_.surface_limit_rad);
+  // Positive beta is velocity toward body-right. A positive rudder command
+  // creates the positive yaw moment that drives beta back toward zero. Retain
+  // yaw-rate damping and a small heading feed-forward term.
+  const double rudder = clamp(0.80 * est.sideslip_rad - 0.15 * est.yaw_rate_rad_s + 0.25 * hdg_err,
+                              -cfg_.surface_limit_rad, cfg_.surface_limit_rad);
 
   acs::aero::ControlInputs u{};
   u.aileron_rad = clamp(aileron, -cfg_.surface_limit_rad, cfg_.surface_limit_rad);

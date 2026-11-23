@@ -5,9 +5,12 @@
 namespace acs::aero {
 
 struct ControlInputs {
-  double aileron_rad{};   // +roll right
-  double elevator_rad{};  // +pitch up (negative alpha)
-  double rudder_rad{};    // +yaw right
+  // Virtual surface commands use the same positive sense as the body-axis
+  // moment they produce. These are controller commands, not trailing-edge
+  // deflection angles.
+  double aileron_rad{};   // positive -> +L, right-wing-down roll
+  double elevator_rad{};  // positive -> +M, nose-up pitch
+  double rudder_rad{};    // positive -> +N, nose-right yaw
   double throttle_01{};   // 0..1
 };
 
@@ -51,7 +54,9 @@ struct AeroParams {
   double cx_alpha2{0.8};       // induced drag vs alpha^2
 
   // lateral stability
-  double cy_beta{0.98};
+  // Positive beta is velocity toward body +y (right). The restoring
+  // sideforce must point left, hence Cy_beta < 0 in FRD axes.
+  double cy_beta{-0.98};
 
   // control derivatives
   double cl_da{0.08};

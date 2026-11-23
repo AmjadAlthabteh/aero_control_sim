@@ -80,12 +80,23 @@ static AhrsState ahrs_update(const AhrsState& prev, const ImuSample& imu, double
   const double alpha = kTau_s / (kTau_s + dt_s);
 
   // --- Gyro propagation -------------------------------------------------------
-  // Body rates (p, q, r) are not exactly Euler rates except at zero pitch/yaw.
-  // For the small-angle / low-pitch regime typical of fixed-wing UAVs the
-  // approximation φ̇ ≈ p,  θ̇ ≈ q,  ψ̇ ≈ r is accurate to a few percent.
-  const double roll_gyro  = prev.roll_rad  + imu.gyro_body_rad_s.x * dt_s;
-  const double pitch_gyro = prev.pitch_rad + imu.gyro_body_rad_s.y * dt_s;
-  const double yaw_gyro   = prev.yaw_rad   + imu.gyro_body_rad_s.z * dt_s;
+  // Convert FRD body rates into 3-2-1 Euler rates. Integrating p, q, and r as
+  // Euler rates directly creates artificial phase error whenever roll or pitch
+  // is nonzero.
+  const double sin_phi = std::sin(prev.roll_rad);
+  const double cos_phi = std::cos(prev.roll_rad);
+  const double sin_theta = std::sin(prev.pitch_rad);
+  double cos_theta = std::cos(prev.pitch_rad);
+  // Keep the Euler representation finite near its inherent pitch singularity.
+  if (std::abs(cos_theta) < 1e-6) cos_theta = std::copysign(1e-6, cos_theta);
+  const double tan_theta = sin_theta / cos_theta;
+  const double p = imu.gyro_body_rad_s.x;
+  const double q = imu.gyro_body_rad_s.y;
+  const double r = imu.gyro_body_rad_s.z;
+  const double coupled_rate = q * sin_phi + r * cos_phi;
+  const double roll_gyro = prev.roll_rad + (p + tan_theta * coupled_rate) * dt_s;
+  const double pitch_gyro = prev.pitch_rad + (q * cos_phi - r * sin_phi) * dt_s;
+  const double yaw_gyro = prev.yaw_rad + (coupled_rate / cos_theta) * dt_s;
 
   // --- Accelerometer-derived roll and pitch -----------------------------------
   const double ax = imu.accel_body_m_s2.x;
@@ -229,6 +240,7 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
 
       est.altitude_m     = baro.altitude_m;
       est.airspeed_m_s   = airspeed;
+      est.sideslip_rad   = aero_for_imu.beta_rad;
       est.yaw_rate_rad_s = imu.gyro_body_rad_s.z;
 
       if (enable_profiling) {
