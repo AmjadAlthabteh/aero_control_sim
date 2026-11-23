@@ -42,8 +42,11 @@ int main() {
   const std::string metadata_text((std::istreambuf_iterator<char>(metadata)),
                                   std::istreambuf_iterator<char>());
   assert(metadata_text.find("\"sample_rate_hz\": 100") != std::string::npos);
+  assert(metadata_text.find("\"schema_version\": 2") != std::string::npos);
   assert(metadata_text.find("\"channel_policy\": \"native_columns_only\"") != std::string::npos);
   assert(metadata_text.find("\"reference_channels_synthesized\": false") != std::string::npos);
+  assert(metadata_text.find("\"reference_targets\": [\"target_alt_m\"") != std::string::npos);
+  assert(metadata_text.find("\"applied_controls\": [\"aileron_rad\"") != std::string::npos);
 
   return 0;
 }

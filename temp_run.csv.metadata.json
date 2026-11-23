@@ -1,11 +1,22 @@
 {
   "schema": "aero-control-system-sim.telemetry",
-  "schema_version": 1,
+  "schema_version": 2,
   "coordinate_frames": {"navigation": "NED", "body": "FRD"},
   "sample_period_s": 0.01,
   "sample_rate_hz": 100,
   "channel_policy": "native_columns_only",
   "reference_channels_synthesized": false,
+  "channel_groups": {
+    "state": ["pn_m", "pe_m", "pd_m", "u_mps", "v_mps", "w_mps", "p_rps", "q_rps", "r_rps", "roll_rad", "pitch_rad", "yaw_rad", "alt_m"],
+    "air_data": ["airspeed_mps", "alpha_rad", "beta_rad", "u_air_mps", "v_air_mps", "w_air_mps"],
+    "applied_controls": ["aileron_rad", "elevator_rad", "rudder_rad", "throttle_01"],
+    "forces_moments": ["fx_n", "fy_n", "fz_n", "mx_nm", "my_nm", "mz_nm"],
+    "environment": ["wind_n_mps", "wind_e_mps", "wind_d_mps"],
+    "commanded_controls": ["aileron_cmd_rad", "elevator_cmd_rad", "rudder_cmd_rad", "throttle_cmd_01"],
+    "sensor_validity": ["baro_valid", "gps_valid"],
+    "reference_targets": ["target_alt_m", "target_heading_rad", "target_airspeed_mps", "target_roll_rad", "target_pitch_rad"],
+    "context": ["t_s", "mission_segment"]
+  },
   "columns": [
     {"name": "t_s", "unit": "s"},
     {"name": "pn_m", "unit": "m"},

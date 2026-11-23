@@ -12,6 +12,9 @@ from a generic aircraft telemetry layout. In particular:
 - `airspeed_mps` and all other `_mps` channels use metres per second.
 - Navigation vectors use NED; body vectors use FRD.
 - Only columns listed in `columns` were measured or computed by the simulator.
+- `channel_groups` separates state, air-data, applied-control, command,
+  validity, environmental, and reference-target fields. Analyses of actual
+  vehicle behavior should exclude the `reference_targets` group.
 - `reference_channels_synthesized` is `false`. An absent channel such as EGT,
   N2, hydraulic pressure, flap position, or yaw trim must remain unavailable.
   It must not be assigned a nominal value or included in channel-count or
