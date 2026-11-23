@@ -32,7 +32,9 @@ AeroForcesMoments AeroModel::evaluate(const acs::math::Vector3& velocity_body_m_
   // body frame is frd (x fwd, y right, z down).
   // In FRD, positive body-z velocity is downward relative to the air and
   // therefore corresponds to positive angle of attack.
-  const double alpha = std::atan2(w, std::max(1e-6, u));
+  // Preserve the quadrant in reverse/vertical flow. Clamping u positive would
+  // incorrectly report a small angle when the relative wind points aft.
+  const double alpha = std::atan2(w, u);
   const double beta = std::asin(clamp(v / vmag, -1.0, 1.0));
 
   const double qbar = 0.5 * rho_kg_m3 * v2;

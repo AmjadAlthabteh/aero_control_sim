@@ -125,6 +125,12 @@ void test_aero_model_forces() {
     assert(fm_lift.alpha_rad > 0.0); // Positive angle of attack
     assert(fm_lift.force_body_n.x < 0.0); // Drag opposes forward motion
 
+    // Reverse flow must preserve the atan2 quadrant instead of being folded
+    // into a small forward-flight angle.
+    const auto fm_reverse = model.evaluate(acs::math::Vector3(-20.0, 0.0, 2.0),
+                                            omega_zero, 1.225, u_zero);
+    assert(fm_reverse.alpha_rad > 0.5 * 3.14159265358979323846);
+
     // Test 3: Throttle produces forward thrust
     acs::aero::ControlInputs u_throttle{};
     u_throttle.throttle_01 = 1.0; // Full throttle
