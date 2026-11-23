@@ -1,5 +1,6 @@
 #include "acs/simulation/Telemetry.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <iomanip>
@@ -79,12 +80,17 @@ void Telemetry::write_metadata(const std::string& metadata_path, double sample_p
   metadata_ok_ = metadata.good();
 }
 
-void Telemetry::write_row(const std::string& csv_row) {
-  if (!ok()) return;
+bool Telemetry::write_row(const std::string& csv_row) {
+  if (!ok()) return false;
+  const std::size_t field_count =
+      1U + static_cast<std::size_t>(std::count(csv_row.begin(), csv_row.end(), ','));
+  if (field_count != kColumns.size()) return false;
   out_ << csv_row << "\n";
   if (ok()) {
     ++rows_written_;
+    return true;
   }
+  return false;
 }
 
 }  // namespace acs::simulation

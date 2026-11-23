@@ -1,12 +1,21 @@
 #include <cassert>
 #include <fstream>
 #include <iterator>
+#include <sstream>
 #include <string>
 
 #include "acs/simulation/Telemetry.h"
 
 int main() {
   const std::string path = "test_telemetry_tmp.csv";
+  auto make_row = [](int sample) {
+    std::ostringstream row;
+    for (int column = 0; column < 45; ++column) {
+      if (column != 0) row << ',';
+      row << sample + column;
+    }
+    return row.str();
+  };
 
   {
     acs::simulation::Telemetry telemetry(path, 0.01);
@@ -14,8 +23,9 @@ int main() {
     assert(telemetry.metadata_ok());
     telemetry.write_header();
     assert(telemetry.rows_written() == 0);
-    telemetry.write_row("0,1,2");
-    telemetry.write_row("1,2,3");
+    assert(!telemetry.write_row("0,1,2"));
+    assert(telemetry.write_row(make_row(0)));
+    assert(telemetry.write_row(make_row(1)));
     assert(telemetry.rows_written() == 2);
   }
 

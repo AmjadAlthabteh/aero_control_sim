@@ -15,7 +15,8 @@ public:
   Telemetry& operator=(const Telemetry&) = delete;
 
   void write_header();
-  void write_row(const std::string& csv_row);
+  // Returns false without writing when the row does not match the schema.
+  bool write_row(const std::string& csv_row);
   bool ok() const;
   bool metadata_ok() const;
   std::size_t rows_written() const;
