@@ -11,13 +11,15 @@ static double clamp(double x, double lo, double hi) { return std::max(lo, std::m
 FlightController::FlightController(const ControllerConfig& cfg)
     : cfg_(cfg),
       roll_pid_(cfg.roll_gains, cfg.integrator_limit, cfg.surface_limit_rad),
-      pitch_pid_(cfg.pitch_gains, cfg.integrator_limit, cfg.surface_limit_rad),
+      pitch_pid_(cfg.pitch_gains, cfg.integrator_limit, cfg.pitch_rate_limit_rad_s),
+      pitch_rate_pid_(cfg.pitch_rate_gains, cfg.integrator_limit, cfg.surface_limit_rad),
       heading_pid_(cfg.heading_gains, cfg.integrator_limit, 0.8),
       altitude_pid_(cfg.altitude_gains, cfg.integrator_limit, 0.5) {}
 
 void FlightController::reset() {
   roll_pid_.reset();
   pitch_pid_.reset();
+  pitch_rate_pid_.reset();
   heading_pid_.reset();
   altitude_pid_.reset();
 }
@@ -47,13 +49,17 @@ acs::aero::ControlInputs FlightController::update(const ControllerTargets& targe
   scaled_roll.kd *= gs;
   roll_pid_.set_gains(scaled_roll);
 
-  PID::Gains scaled_pitch = cfg_.pitch_gains;
-  scaled_pitch.kp *= gs;
-  scaled_pitch.kd *= gs;
-  pitch_pid_.set_gains(scaled_pitch);
+  PID::Gains scaled_pitch_rate = cfg_.pitch_rate_gains;
+  scaled_pitch_rate.kp *= gs;
+  scaled_pitch_rate.kd *= gs;
+  pitch_rate_pid_.set_gains(scaled_pitch_rate);
 
   const double aileron = roll_pid_.update(roll_cmd, est.roll_rad, dt_s);
-  const double elevator = pitch_pid_.update(pitch_cmd, est.pitch_rad, dt_s);
+  // Cascade pitch angle into a body-q command, then close the fast inner loop
+  // directly on the gyro. This keeps pitch-angle authority without allowing a
+  // large q transient to run ahead of the integrated attitude.
+  const double pitch_rate_cmd = pitch_pid_.update(pitch_cmd, est.pitch_rad, dt_s);
+  const double elevator = pitch_rate_pid_.update(pitch_rate_cmd, est.pitch_rate_rad_s, dt_s);
 
   // throttle for airspeed: simple proportional with a little trim.
   const double v_err = targets.airspeed_m_s - est.airspeed_m_s;

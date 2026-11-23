@@ -241,6 +241,24 @@ void test_controller_rudder_coordination() {
     assert(positive_yaw_rate.rudder_rad < 0.0);
 }
 
+void test_controller_pitch_rate_cascade() {
+    acs::gnc::FlightController controller(acs::gnc::ControllerConfig{});
+    acs::gnc::ControllerTargets targets{};
+    targets.airspeed_m_s = 15.0;
+    acs::gnc::EstimatedState est{};
+    est.airspeed_m_s = 15.0;
+
+    targets.pitch_rad = 0.1;
+    const auto pitch_up = controller.update(targets, est, 0.01);
+    assert(pitch_up.elevator_rad > 0.0);
+
+    controller.reset();
+    targets.pitch_rad = 0.0;
+    est.pitch_rate_rad_s = 0.2;
+    const auto damp_q = controller.update(targets, est, 0.01);
+    assert(damp_q.elevator_rad < 0.0);
+}
+
 // Test atmosphere model
 void test_atmosphere_model() {
     std::cout << "Testing Atmosphere model..." << std::endl;
@@ -311,6 +329,7 @@ int main() {
         test_aero_model_forces();
         test_rigid_body_dynamics();
         test_controller_rudder_coordination();
+        test_controller_pitch_rate_cascade();
         test_atmosphere_model();
         test_energy_conservation();
 

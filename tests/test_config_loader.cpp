@@ -16,8 +16,10 @@ int main() {
     "max_steps": 250,
     "controller": {
       "roll_gains": {"kp": 3.0, "ki": 0.2, "kd": 0.4, "kaw": 0.8, "tau_d": 0.05},
+      "pitch_rate_gains": {"kp": 1.4, "ki": 0.15, "kd": 0.06},
       "surface_limit_rad": 0.21,
       "throttle_limit": 0.77,
+      "pitch_rate_limit_rad_s": 0.65,
       "sideslip_gain": 0.65,
       "yaw_rate_damping_gain": 0.12,
       "heading_rudder_gain": 0.18
@@ -50,8 +52,12 @@ int main() {
   assert(near(params.ctrl_cfg.roll_gains.kd, 0.4));
   assert(near(params.ctrl_cfg.roll_gains.kaw, 0.8));
   assert(near(params.ctrl_cfg.roll_gains.tau_d, 0.05));
+  assert(near(params.ctrl_cfg.pitch_rate_gains.kp, 1.4));
+  assert(near(params.ctrl_cfg.pitch_rate_gains.ki, 0.15));
+  assert(near(params.ctrl_cfg.pitch_rate_gains.kd, 0.06));
   assert(near(params.ctrl_cfg.surface_limit_rad, 0.21));
   assert(near(params.ctrl_cfg.throttle_limit, 0.77));
+  assert(near(params.ctrl_cfg.pitch_rate_limit_rad_s, 0.65));
   assert(near(params.ctrl_cfg.sideslip_gain, 0.65));
   assert(near(params.ctrl_cfg.yaw_rate_damping_gain, 0.12));
   assert(near(params.ctrl_cfg.heading_rudder_gain, 0.18));

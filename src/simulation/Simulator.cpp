@@ -241,6 +241,7 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
       est.altitude_m     = baro.altitude_m;
       est.airspeed_m_s   = airspeed;
       est.sideslip_rad   = aero_for_imu.beta_rad;
+      est.pitch_rate_rad_s = imu.gyro_body_rad_s.y;
       est.yaw_rate_rad_s = imu.gyro_body_rad_s.z;
 
       if (enable_profiling) {
