@@ -16,6 +16,7 @@ struct ControllerTargets {
 
 struct ControllerConfig {
   PID::Gains roll_gains{6.0, 0.5, 0.25};
+  PID::Gains roll_rate_gains{0.8, 0.05, 0.0};
   PID::Gains pitch_gains{7.0, 0.6, 0.30};
   PID::Gains pitch_rate_gains{0.8, 0.05, 0.0};
   PID::Gains heading_gains{2.0, 0.1, 0.0};
@@ -25,6 +26,7 @@ struct ControllerConfig {
   double surface_limit_rad{0.35};
   double throttle_limit{1.0};
   double pitch_rate_limit_rad_s{0.8};
+  double roll_rate_limit_rad_s{1.0};
   double sideslip_gain{0.80};
   double yaw_rate_damping_gain{0.25};
   double heading_rudder_gain{0.45};
@@ -40,6 +42,7 @@ struct EstimatedState {
   double altitude_m{};
   double airspeed_m_s{};
   double sideslip_rad{};
+  double roll_rate_rad_s{};
   double pitch_rate_rad_s{};
   double yaw_rate_rad_s{};
 };
@@ -56,6 +59,7 @@ public:
 private:
   ControllerConfig cfg_{};
   PID roll_pid_{};
+  PID roll_rate_pid_{};
   PID pitch_pid_{};
   PID pitch_rate_pid_{};
   PID heading_pid_{};

@@ -143,6 +143,8 @@ public:
       };
 
       if (controller.has("roll_gains")) load_gains(controller.get("roll_gains"), params.ctrl_cfg.roll_gains);
+      if (controller.has("roll_rate_gains"))
+        load_gains(controller.get("roll_rate_gains"), params.ctrl_cfg.roll_rate_gains);
       if (controller.has("pitch_gains")) load_gains(controller.get("pitch_gains"), params.ctrl_cfg.pitch_gains);
       if (controller.has("pitch_rate_gains"))
         load_gains(controller.get("pitch_rate_gains"), params.ctrl_cfg.pitch_rate_gains);
@@ -156,6 +158,8 @@ public:
         params.ctrl_cfg.throttle_limit = controller.get("throttle_limit").as_number();
       if (controller.has("pitch_rate_limit_rad_s"))
         params.ctrl_cfg.pitch_rate_limit_rad_s = controller.get("pitch_rate_limit_rad_s").as_number();
+      if (controller.has("roll_rate_limit_rad_s"))
+        params.ctrl_cfg.roll_rate_limit_rad_s = controller.get("roll_rate_limit_rad_s").as_number();
       if (controller.has("sideslip_gain"))
         params.ctrl_cfg.sideslip_gain = controller.get("sideslip_gain").as_number();
       if (controller.has("yaw_rate_damping_gain"))
