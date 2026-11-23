@@ -164,6 +164,8 @@ public:
         params.ctrl_cfg.sideslip_gain = controller.get("sideslip_gain").as_number();
       if (controller.has("yaw_rate_damping_gain"))
         params.ctrl_cfg.yaw_rate_damping_gain = controller.get("yaw_rate_damping_gain").as_number();
+      if (controller.has("coordinated_turn_gain"))
+        params.ctrl_cfg.coordinated_turn_gain = controller.get("coordinated_turn_gain").as_number();
       if (controller.has("heading_rudder_gain"))
         params.ctrl_cfg.heading_rudder_gain = controller.get("heading_rudder_gain").as_number();
     }

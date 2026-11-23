@@ -1,6 +1,7 @@
 #include "acs/gnc/FlightController.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "acs/math/Constants.h"
 
@@ -71,11 +72,18 @@ acs::aero::ControlInputs FlightController::update(const ControllerTargets& targe
   double throttle = 0.55 + 0.04 * v_err + 0.01 * alt_err;
   throttle = clamp(throttle, 0.0, cfg_.throttle_limit);
 
+  // Feed the yaw damper the steady coordinated-turn rate, r = g*tan(phi)/V,
+  // rather than always driving body yaw rate to zero. This prevents the rudder
+  // from fighting the bank command while the beta feedback rejects gust slip.
+  static constexpr double kGravity_m_s2 = 9.80665;
+  const double coordinated_yaw_rate =
+      clamp(cfg_.coordinated_turn_gain * kGravity_m_s2 * std::tan(roll_cmd) / v_safe, -0.8, 0.8);
+
   // Positive beta is velocity toward body-right. A positive rudder command
-  // creates the positive yaw moment that drives beta back toward zero. Retain
-  // yaw-rate damping and a small heading feed-forward term.
+  // creates the positive yaw moment that drives beta back toward zero.
   const double rudder = clamp(cfg_.sideslip_gain * est.sideslip_rad
-                                  - cfg_.yaw_rate_damping_gain * est.yaw_rate_rad_s
+                                  + cfg_.yaw_rate_damping_gain *
+                                        (coordinated_yaw_rate - est.yaw_rate_rad_s)
                                   + cfg_.heading_rudder_gain * hdg_err,
                               -cfg_.surface_limit_rad, cfg_.surface_limit_rad);
 

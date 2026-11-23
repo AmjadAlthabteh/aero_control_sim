@@ -50,6 +50,7 @@
     "roll_rate_limit_rad_s": 1.0,
     "sideslip_gain": 0.8,
     "yaw_rate_damping_gain": 0.25,
+    "coordinated_turn_gain": 1.0,
     "heading_rudder_gain": 0.45
   },
 

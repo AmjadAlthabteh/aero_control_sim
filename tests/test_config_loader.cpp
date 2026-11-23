@@ -22,6 +22,7 @@ int main() {
       "pitch_rate_limit_rad_s": 0.65,
       "sideslip_gain": 0.65,
       "yaw_rate_damping_gain": 0.12,
+      "coordinated_turn_gain": 0.9,
       "heading_rudder_gain": 0.18
     },
     "targets": {
@@ -60,6 +61,7 @@ int main() {
   assert(near(params.ctrl_cfg.pitch_rate_limit_rad_s, 0.65));
   assert(near(params.ctrl_cfg.sideslip_gain, 0.65));
   assert(near(params.ctrl_cfg.yaw_rate_damping_gain, 0.12));
+  assert(near(params.ctrl_cfg.coordinated_turn_gain, 0.9));
   assert(near(params.ctrl_cfg.heading_rudder_gain, 0.18));
   assert(near(params.sim_cfg.actuators.surface_limit_rad, 0.19));
   assert(near(params.sim_cfg.actuators.surface_deadband_rad, 0.02));

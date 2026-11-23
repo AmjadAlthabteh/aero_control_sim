@@ -239,6 +239,17 @@ void test_controller_rudder_coordination() {
     est.yaw_rate_rad_s = 0.1;
     const auto positive_yaw_rate = controller.update(targets, est, 0.01);
     assert(positive_yaw_rate.rudder_rad < 0.0);
+
+    controller.reset();
+    targets.roll_rad = 0.2;
+    est.yaw_rate_rad_s = 0.0;
+    const auto right_turn = controller.update(targets, est, 0.01);
+    assert(right_turn.rudder_rad > 0.0);
+
+    controller.reset();
+    targets.roll_rad = -0.2;
+    const auto left_turn = controller.update(targets, est, 0.01);
+    assert(left_turn.rudder_rad < 0.0);
 }
 
 void test_controller_pitch_rate_cascade() {

@@ -29,6 +29,7 @@ struct ControllerConfig {
   double roll_rate_limit_rad_s{1.0};
   double sideslip_gain{0.80};
   double yaw_rate_damping_gain{0.25};
+  double coordinated_turn_gain{1.0};
   double heading_rudder_gain{0.45};
 };
 
