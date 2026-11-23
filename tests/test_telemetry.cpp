@@ -10,7 +10,7 @@ int main() {
   const std::string path = "test_telemetry_tmp.csv";
   auto make_row = [](int sample) {
     std::ostringstream row;
-    for (int column = 0; column < 45; ++column) {
+    for (int column = 0; column < 62; ++column) {
       if (column != 0) row << ',';
       row << sample + column;
     }
@@ -42,7 +42,8 @@ int main() {
   const std::string metadata_text((std::istreambuf_iterator<char>(metadata)),
                                   std::istreambuf_iterator<char>());
   assert(metadata_text.find("\"sample_rate_hz\": 100") != std::string::npos);
-  assert(metadata_text.find("\"schema_version\": 2") != std::string::npos);
+  assert(metadata_text.find("\"schema_version\": 3") != std::string::npos);
+  assert(metadata_text.find("\"fused_state\": [\"fused_pn_m\"") != std::string::npos);
   assert(metadata_text.find("\"channel_policy\": \"native_columns_only\"") != std::string::npos);
   assert(metadata_text.find("\"reference_channels_synthesized\": false") != std::string::npos);
   assert(metadata_text.find("\"reference_targets\": [\"target_alt_m\"") != std::string::npos);

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -23,6 +24,7 @@ Simulator::Simulator(const SimulatorConfig& sim_cfg,
       aircraft_(aircraft),
       controller_(controller_template),
       sensors_(sensor_cfg, sim_cfg.seed),
+      fusion_(FusionConfig{}, sensor_cfg),
       wind_(sim_cfg.wind, sim_cfg.seed + 1U),
       actuators_(sim_cfg.actuators, sim_cfg.actuator_faults) {}
 
@@ -66,6 +68,7 @@ Simulator::Simulator(const SimulatorConfig& sim_cfg,
 // gravity and the accel-derived angles would be wrong.
 // =============================================================================
 
+#if 0  // Superseded by SensorFusion; retained here as design history.
 struct AhrsState {
   double roll_rad{};
   double pitch_rad{};
@@ -121,6 +124,8 @@ static AhrsState ahrs_update(const AhrsState& prev, const ImuSample& imu, double
   return out;
 }
 
+#endif
+
 static acs::physics::RigidBodyState make_initial_state() {
   using acs::math::kDeg2Rad;
   acs::physics::RigidBodyState x{};
@@ -171,7 +176,9 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
   // Seed the AHRS from the truth Euler angles so the filter starts converged.
   // In a real system this would come from an alignment procedure.
   const Vector3 eul_init = x.q_nb.to_euler321();
-  AhrsState ahrs{eul_init.x, eul_init.y, eul_init.z};
+  const Vector3 velocity_ned_init = x.q_nb.rotate(x.velocity_body_m_s);
+  fusion_.reset(x.position_ned_m, velocity_ned_init, eul_init);
+  FilteredState filtered = fusion_.state();
 
   int steps = static_cast<int>(std::ceil(sim_cfg_.sim_time_s / sim_cfg_.dt_s));
   if (sim_cfg_.max_steps > 0) {
@@ -205,16 +212,14 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
     acs::aero::ControlInputs u_cmd{};
     acs::aero::ControlInputs u_hold{};
     GpsSample gps{};
-    BaroSample baro{};
+    AirDataSample air_data{};
     {
       PROFILE_SCOPE("control_update");
-      const double airspeed = v_air_b.norm();
-
       if (enable_profiling) {
         auto& profiler = acs::profiling::PerformanceProfiler::instance();
         profiler.begin_section("sensors");
       }
-      baro = sensors_.baro(altitude_m);
+      air_data = sensors_.air_data(altitude_m, v_air_b);
       gps = sensors_.gps(x.position_ned_m, v_n);
       if (enable_profiling) {
         auto& profiler = acs::profiling::PerformanceProfiler::instance();
@@ -231,16 +236,14 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
       // from sensor fusion rather than truth state, so gyro bias and accel
       // noise from the sensor model feed through to the controller — the
       // simulation exercises a realistic closed-loop sensing chain.
-      ahrs = ahrs_update(ahrs, imu, sim_cfg_.dt_s);
+      filtered = fusion_.update(imu, gps, air_data, wind_n, sim_cfg_.dt_s);
       acs::gnc::EstimatedState est{};
-      est.roll_rad  = ahrs.roll_rad;
-      est.pitch_rad = ahrs.pitch_rad;
-      est.yaw_rad   = ahrs.yaw_rad;
-      (void)gps;
-
-      est.altitude_m     = baro.altitude_m;
-      est.airspeed_m_s   = airspeed;
-      est.sideslip_rad   = aero_for_imu.beta_rad;
+      est.roll_rad  = filtered.roll_rad;
+      est.pitch_rad = filtered.pitch_rad;
+      est.yaw_rad   = filtered.yaw_rad;
+      est.altitude_m     = filtered.altitude_m;
+      est.airspeed_m_s   = filtered.airspeed_m_s;
+      est.sideslip_rad   = air_data.valid ? air_data.sideslip_rad : aero_for_imu.beta_rad;
       est.roll_rate_rad_s = imu.gyro_body_rad_s.x;
       est.pitch_rate_rad_s = imu.gyro_body_rad_s.y;
       est.yaw_rate_rad_s = imu.gyro_body_rad_s.z;
@@ -318,16 +321,33 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
       row << wind_n.x << "," << wind_n.y << "," << wind_n.z << ",";
       row << v_air_b_log.x << "," << v_air_b_log.y << "," << v_air_b_log.z << ",";
       row << u_cmd.aileron_rad << "," << u_cmd.elevator_rad << "," << u_cmd.rudder_rad << "," << u_cmd.throttle_01 << ",";
-      row << (baro.valid ? 1 : 0) << "," << (gps.valid ? 1 : 0) << ",";
+      row << (air_data.valid ? 1 : 0) << "," << (gps.valid ? 1 : 0) << ",";
       row << targets.altitude_m << "," << targets.heading_rad << "," << targets.airspeed_m_s << "," << targets.roll_rad << ","
-          << targets.pitch_rad << "," << mission_segment;
+          << targets.pitch_rad << "," << mission_segment << ",";
+      row << filtered.position_ned_m.x << "," << filtered.position_ned_m.y << "," << filtered.position_ned_m.z << ",";
+      row << filtered.velocity_ned_m_s.x << "," << filtered.velocity_ned_m_s.y << "," << filtered.velocity_ned_m_s.z << ",";
+      row << filtered.roll_rad << "," << filtered.pitch_rad << "," << filtered.yaw_rad << ",";
+      row << filtered.altitude_m << "," << filtered.airspeed_m_s << ",";
+      row << filtered.position_std_m << "," << filtered.velocity_std_m_s << ",";
+      row << filtered.gps_innovation_m << "," << filtered.air_data_innovation_m_s << ",";
+      row << (filtered.gps_aiding ? 1 : 0) << "," << (filtered.air_data_aiding ? 1 : 0);
       log->write_row(row.str());
+      const int display_stride = std::max(1, static_cast<int>(std::round(0.25 / sim_cfg_.dt_s)));
+      if (i % display_stride == 0 || i + 1 == steps) {
+        std::cout << "\r[FUSION] t=" << std::setw(6) << std::setprecision(2) << std::fixed
+                  << (t + sim_cfg_.dt_s) << "s  alt=" << std::setw(7) << filtered.altitude_m
+                  << "m  V=" << std::setw(6) << filtered.airspeed_m_s
+                  << "m/s  pos_sigma=" << std::setw(5) << filtered.position_std_m
+                  << "m  GPS:" << (filtered.gps_aiding ? "OK  " : "DROP")
+                  << " AIR:" << (filtered.air_data_aiding ? "OK  " : "DROP") << std::flush;
+      }
     }
 
     t += sim_cfg_.dt_s;
   }
 
   if (enable_profiling) {
+    std::cout << '\n';
     auto& profiler = acs::profiling::PerformanceProfiler::instance();
     profiler.print_report();
   }

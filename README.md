@@ -12,10 +12,14 @@
 - aerodynamic lift/drag/sideforce + moments with control surface effects
 - wind + gust/turbulence model (ned frame)
 - actuator dynamics: first-order lag + rate limiting, with stuck-surface fault injection
-- imu/gps/barometer sensors with gaussian noise, bias random walk, and dropout simulation
+- imu/gps/air-data sensors with gaussian noise, bias random walk, and dropout simulation
+- 9-state navigation Kalman filter fusing inertial prediction, GPS position/velocity,
+  barometric altitude, and pitot airspeed with live uncertainty/aiding telemetry
 - roll/pitch/heading/altitude hold pid controllers
 - time-scheduled mission profiles with interpolated altitude, heading, airspeed, roll, and pitch targets
 - csv telemetry logging
+  - filtered NED state, attitude, airspeed, covariance, innovations, and aiding health
+  - live terminal fusion status while telemetry is enabled
 
 ### performance & testing (new!)
 - **performance profiler**: real-time timing metrics for all simulation components

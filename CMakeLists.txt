@@ -22,6 +22,7 @@ add_library(acs
   src/gnc/FlightController.cpp
   src/simulation/Noise.cpp
   src/simulation/Sensors.cpp
+  src/simulation/SensorFusion.cpp
   src/simulation/Telemetry.cpp
   src/simulation/Aircraft.cpp
   src/simulation/Wind.cpp

@@ -13,7 +13,7 @@ struct ColumnDefinition {
   const char* unit;
 };
 
-constexpr std::array<ColumnDefinition, 45> kColumns{{
+constexpr std::array<ColumnDefinition, 62> kColumns{{
     {"t_s", "s"}, {"pn_m", "m"}, {"pe_m", "m"}, {"pd_m", "m"},
     {"u_mps", "m/s"}, {"v_mps", "m/s"}, {"w_mps", "m/s"},
     {"p_rps", "rad/s"}, {"q_rps", "rad/s"}, {"r_rps", "rad/s"},
@@ -27,7 +27,14 @@ constexpr std::array<ColumnDefinition, 45> kColumns{{
     {"aileron_cmd_rad", "rad"}, {"elevator_cmd_rad", "rad"}, {"rudder_cmd_rad", "rad"},
     {"throttle_cmd_01", "1"}, {"baro_valid", "bool"}, {"gps_valid", "bool"},
     {"target_alt_m", "m"}, {"target_heading_rad", "rad"}, {"target_airspeed_mps", "m/s"},
-    {"target_roll_rad", "rad"}, {"target_pitch_rad", "rad"}, {"mission_segment", "index"}}};
+    {"target_roll_rad", "rad"}, {"target_pitch_rad", "rad"}, {"mission_segment", "index"},
+    {"fused_pn_m", "m"}, {"fused_pe_m", "m"}, {"fused_pd_m", "m"},
+    {"fused_vn_mps", "m/s"}, {"fused_ve_mps", "m/s"}, {"fused_vd_mps", "m/s"},
+    {"fused_roll_rad", "rad"}, {"fused_pitch_rad", "rad"}, {"fused_yaw_rad", "rad"},
+    {"fused_alt_m", "m"}, {"fused_airspeed_mps", "m/s"},
+    {"fused_pos_std_m", "m"}, {"fused_vel_std_mps", "m/s"},
+    {"gps_innovation_m", "m"}, {"air_data_innovation_mps", "m/s"},
+    {"gps_aiding", "bool"}, {"air_data_aiding", "bool"}}};
 }  // namespace
 
 Telemetry::Telemetry(const std::string& path, double sample_period_s)
@@ -64,7 +71,7 @@ void Telemetry::write_metadata(const std::string& metadata_path, double sample_p
   metadata << std::setprecision(12)
                 << "{\n"
                 << "  \"schema\": \"aero-control-system-sim.telemetry\",\n"
-                << "  \"schema_version\": 2,\n"
+                << "  \"schema_version\": 3,\n"
                 << "  \"coordinate_frames\": {\"navigation\": \"NED\", \"body\": \"FRD\"},\n"
                 << "  \"sample_period_s\": " << (valid_period ? sample_period_s : 0.0) << ",\n"
                 << "  \"sample_rate_hz\": " << (valid_period ? 1.0 / sample_period_s : 0.0) << ",\n"
@@ -78,6 +85,8 @@ void Telemetry::write_metadata(const std::string& metadata_path, double sample_p
                 << "    \"environment\": [\"wind_n_mps\", \"wind_e_mps\", \"wind_d_mps\"],\n"
                 << "    \"commanded_controls\": [\"aileron_cmd_rad\", \"elevator_cmd_rad\", \"rudder_cmd_rad\", \"throttle_cmd_01\"],\n"
                 << "    \"sensor_validity\": [\"baro_valid\", \"gps_valid\"],\n"
+                << "    \"fused_state\": [\"fused_pn_m\", \"fused_pe_m\", \"fused_pd_m\", \"fused_vn_mps\", \"fused_ve_mps\", \"fused_vd_mps\", \"fused_roll_rad\", \"fused_pitch_rad\", \"fused_yaw_rad\", \"fused_alt_m\", \"fused_airspeed_mps\"],\n"
+                << "    \"fusion_health\": [\"fused_pos_std_m\", \"fused_vel_std_mps\", \"gps_innovation_m\", \"air_data_innovation_mps\", \"gps_aiding\", \"air_data_aiding\"],\n"
                 << "    \"reference_targets\": [\"target_alt_m\", \"target_heading_rad\", \"target_airspeed_mps\", \"target_roll_rad\", \"target_pitch_rad\"],\n"
                 << "    \"context\": [\"t_s\", \"mission_segment\"]\n"
                 << "  },\n"

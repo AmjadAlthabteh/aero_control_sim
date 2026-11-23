@@ -22,12 +22,22 @@ struct BaroSample {
   bool valid{true};
 };
 
+struct AirDataSample {
+  double altitude_m{};
+  double airspeed_m_s{};
+  double angle_of_attack_rad{};
+  double sideslip_rad{};
+  bool valid{true};
+};
+
 struct SensorConfig {
   double accel_noise_std_m_s2{0.08};
   double gyro_noise_std_rad_s{0.002};
   double gps_pos_noise_std_m{0.8};
   double gps_vel_noise_std_m_s{0.1};
   double baro_alt_noise_std_m{0.5};
+  double airspeed_noise_std_m_s{0.15};
+  double air_angle_noise_std_rad{0.003};
 
   // constant sensor biases.
   acs::math::Vector3 accel_bias_m_s2{};
@@ -56,6 +66,7 @@ public:
                 const acs::math::Vector3& velocity_ned_m_s);
 
   BaroSample baro(double altitude_m);
+  AirDataSample air_data(double altitude_m, const acs::math::Vector3& velocity_air_body_m_s);
 
 private:
   SensorConfig cfg_{};

@@ -7,6 +7,7 @@
 #include "acs/simulation/Aircraft.h"
 #include "acs/simulation/MissionProfile.h"
 #include "acs/simulation/Sensors.h"
+#include "acs/simulation/SensorFusion.h"
 #include "acs/simulation/Telemetry.h"
 #include "acs/simulation/Wind.h"
 
@@ -39,6 +40,7 @@ private:
   const Aircraft& aircraft_;
   acs::gnc::FlightController controller_;
   Sensors sensors_;
+  SensorFusion fusion_;
   WindModel wind_{};
   Actuators actuators_{};
 };

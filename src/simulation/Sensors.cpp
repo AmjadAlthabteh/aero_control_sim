@@ -1,5 +1,6 @@
 #include "acs/simulation/Sensors.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace acs::simulation {
@@ -93,6 +94,22 @@ BaroSample Sensors::baro(double altitude_m) {
   s.altitude_m = altitude_m + noise_.gaussian(0.0, cfg_.baro_alt_noise_std_m);
   s.valid = true;
   last_baro_ = s;
+  return s;
+}
+
+AirDataSample Sensors::air_data(double altitude_m, const acs::math::Vector3& v) {
+  const BaroSample b = baro(altitude_m);
+  AirDataSample s{};
+  s.altitude_m = b.altitude_m;
+  s.valid = b.valid;
+  if (!s.valid) return s;
+  const double speed = v.norm();
+  s.airspeed_m_s = std::max(0.0, speed + noise_.gaussian(0.0, cfg_.airspeed_noise_std_m_s));
+  if (speed > 1e-6) {
+    s.angle_of_attack_rad = std::atan2(v.z, v.x) + noise_.gaussian(0.0, cfg_.air_angle_noise_std_rad);
+    s.sideslip_rad = std::asin(std::clamp(v.y / speed, -1.0, 1.0)) +
+        noise_.gaussian(0.0, cfg_.air_angle_noise_std_rad);
+  }
   return s;
 }
 
