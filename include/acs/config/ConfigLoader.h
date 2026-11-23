@@ -152,6 +152,12 @@ public:
         params.ctrl_cfg.surface_limit_rad = controller.get("surface_limit_rad").as_number();
       if (controller.has("throttle_limit"))
         params.ctrl_cfg.throttle_limit = controller.get("throttle_limit").as_number();
+      if (controller.has("sideslip_gain"))
+        params.ctrl_cfg.sideslip_gain = controller.get("sideslip_gain").as_number();
+      if (controller.has("yaw_rate_damping_gain"))
+        params.ctrl_cfg.yaw_rate_damping_gain = controller.get("yaw_rate_damping_gain").as_number();
+      if (controller.has("heading_rudder_gain"))
+        params.ctrl_cfg.heading_rudder_gain = controller.get("heading_rudder_gain").as_number();
     }
 
     // Load wind configuration

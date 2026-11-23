@@ -43,7 +43,10 @@
     "altitude_gains": {"kp": 0.8, "ki": 0.1, "kd": 0.0, "kaw": 1.0, "tau_d": 0.0},
     "integrator_limit": 0.5,
     "surface_limit_rad": 0.35,
-    "throttle_limit": 1.0
+    "throttle_limit": 1.0,
+    "sideslip_gain": 0.8,
+    "yaw_rate_damping_gain": 0.15,
+    "heading_rudder_gain": 0.25
   },
 
   "wind": {

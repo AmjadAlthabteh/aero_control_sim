@@ -23,6 +23,9 @@ struct ControllerConfig {
   double integrator_limit{0.5};
   double surface_limit_rad{0.35};
   double throttle_limit{1.0};
+  double sideslip_gain{0.80};
+  double yaw_rate_damping_gain{0.15};
+  double heading_rudder_gain{0.25};
 };
 
 struct EstimatedState {

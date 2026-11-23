@@ -63,7 +63,9 @@ acs::aero::ControlInputs FlightController::update(const ControllerTargets& targe
   // Positive beta is velocity toward body-right. A positive rudder command
   // creates the positive yaw moment that drives beta back toward zero. Retain
   // yaw-rate damping and a small heading feed-forward term.
-  const double rudder = clamp(0.80 * est.sideslip_rad - 0.15 * est.yaw_rate_rad_s + 0.25 * hdg_err,
+  const double rudder = clamp(cfg_.sideslip_gain * est.sideslip_rad
+                                  - cfg_.yaw_rate_damping_gain * est.yaw_rate_rad_s
+                                  + cfg_.heading_rudder_gain * hdg_err,
                               -cfg_.surface_limit_rad, cfg_.surface_limit_rad);
 
   acs::aero::ControlInputs u{};
