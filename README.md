@@ -15,6 +15,8 @@
 - imu/gps/air-data sensors with gaussian noise, bias random walk, and dropout simulation
 - 9-state navigation Kalman filter fusing inertial prediction, GPS position/velocity,
   barometric altitude, and pitot airspeed with live uncertainty/aiding telemetry
+  - normalized-innovation outlier rejection for GPS glitches and pitot spikes
+  - realistic configurable sensor cadence (5 Hz GPS, 20 Hz air data by default)
 - roll/pitch/heading/altitude hold pid controllers
 - time-scheduled mission profiles with interpolated altitude, heading, airspeed, roll, and pitch targets
 - csv telemetry logging

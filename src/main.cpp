@@ -262,6 +262,10 @@ int main(int argc, char* argv[]) {
     std::cerr << "Error: --baro-dropout-prob must be in [0, 1], got " << sensor_cfg.baro_dropout_prob << "\n";
     return 1;
   }
+  if (!(sensor_cfg.gps_rate_hz > 0.0) || !(sensor_cfg.air_data_rate_hz > 0.0)) {
+    std::cerr << "Error: sensor update rates must be positive\n";
+    return 1;
+  }
   if (targets.altitude_m < -1000.0 || targets.altitude_m > 100000.0) {
     std::cerr << "Error: --target-alt must be in range [-1000, 100000], got " << targets.altitude_m << "\n";
     return 1;

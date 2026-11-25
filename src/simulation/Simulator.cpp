@@ -23,6 +23,7 @@ Simulator::Simulator(const SimulatorConfig& sim_cfg,
     : sim_cfg_(sim_cfg),
       aircraft_(aircraft),
       controller_(controller_template),
+      sensor_cfg_(sensor_cfg),
       sensors_(sensor_cfg, sim_cfg.seed),
       fusion_(FusionConfig{}, sensor_cfg),
       wind_(sim_cfg.wind, sim_cfg.seed + 1U),
@@ -212,15 +213,21 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
     acs::aero::ControlInputs u_cmd{};
     acs::aero::ControlInputs u_hold{};
     GpsSample gps{};
+    gps.valid = false;
     AirDataSample air_data{};
+    air_data.valid = false;
     {
       PROFILE_SCOPE("control_update");
       if (enable_profiling) {
         auto& profiler = acs::profiling::PerformanceProfiler::instance();
         profiler.begin_section("sensors");
       }
-      air_data = sensors_.air_data(altitude_m, v_air_b);
-      gps = sensors_.gps(x.position_ned_m, v_n);
+      const int gps_stride = std::max(
+          1, static_cast<int>(std::round(1.0 / (sensor_cfg_.gps_rate_hz * sim_cfg_.dt_s))));
+      const int air_data_stride = std::max(
+          1, static_cast<int>(std::round(1.0 / (sensor_cfg_.air_data_rate_hz * sim_cfg_.dt_s))));
+      if (i % air_data_stride == 0) air_data = sensors_.air_data(altitude_m, v_air_b);
+      if (i % gps_stride == 0) gps = sensors_.gps(x.position_ned_m, v_n);
       if (enable_profiling) {
         auto& profiler = acs::profiling::PerformanceProfiler::instance();
         profiler.end_section("sensors");
@@ -338,8 +345,8 @@ void Simulator::run(const MissionProfile& mission, const std::string& telemetry_
                   << (t + sim_cfg_.dt_s) << "s  alt=" << std::setw(7) << filtered.altitude_m
                   << "m  V=" << std::setw(6) << filtered.airspeed_m_s
                   << "m/s  pos_sigma=" << std::setw(5) << filtered.position_std_m
-                  << "m  GPS:" << (filtered.gps_aiding ? "OK  " : "DROP")
-                  << " AIR:" << (filtered.air_data_aiding ? "OK  " : "DROP") << std::flush;
+                  << "m  GPS:" << (filtered.gps_aiding ? "FUSE" : "PRED")
+                  << " AIR:" << (filtered.air_data_aiding ? "FUSE" : "PRED") << std::flush;
       }
     }
 

@@ -77,6 +77,8 @@
   },
 
   "sensors": {
+    "gps_rate_hz": 5.0,
+    "air_data_rate_hz": 20.0,
     "gps_dropout_prob": 0.0,
     "baro_dropout_prob": 0.0,
     "hold_last_on_dropout": true,

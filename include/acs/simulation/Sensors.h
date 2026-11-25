@@ -38,6 +38,8 @@ struct SensorConfig {
   double baro_alt_noise_std_m{0.5};
   double airspeed_noise_std_m_s{0.15};
   double air_angle_noise_std_rad{0.003};
+  double gps_rate_hz{5.0};
+  double air_data_rate_hz{20.0};
 
   // constant sensor biases.
   acs::math::Vector3 accel_bias_m_s2{};

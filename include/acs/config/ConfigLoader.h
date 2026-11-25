@@ -223,6 +223,10 @@ public:
         params.sensor_cfg.gps_dropout_prob = sensors.get("gps_dropout_prob").as_number();
       if (sensors.has("baro_dropout_prob"))
         params.sensor_cfg.baro_dropout_prob = sensors.get("baro_dropout_prob").as_number();
+      if (sensors.has("gps_rate_hz"))
+        params.sensor_cfg.gps_rate_hz = sensors.get("gps_rate_hz").as_number();
+      if (sensors.has("air_data_rate_hz"))
+        params.sensor_cfg.air_data_rate_hz = sensors.get("air_data_rate_hz").as_number();
       if (sensors.has("hold_last_on_dropout"))
         params.sensor_cfg.hold_last_on_dropout = sensors.get("hold_last_on_dropout").as_bool();
 

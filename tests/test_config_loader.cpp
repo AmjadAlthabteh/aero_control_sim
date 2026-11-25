@@ -40,6 +40,10 @@ int main() {
     "actuators": {
       "surface_limit_rad": 0.19,
       "surface_deadband_rad": 0.02
+    },
+    "sensors": {
+      "gps_rate_hz": 4.0,
+      "air_data_rate_hz": 25.0
     }
   })");
 
@@ -65,6 +69,8 @@ int main() {
   assert(near(params.ctrl_cfg.heading_rudder_gain, 0.18));
   assert(near(params.sim_cfg.actuators.surface_limit_rad, 0.19));
   assert(near(params.sim_cfg.actuators.surface_deadband_rad, 0.02));
+  assert(near(params.sensor_cfg.gps_rate_hz, 4.0));
+  assert(near(params.sensor_cfg.air_data_rate_hz, 25.0));
   assert(params.mission.size() == 3);
   assert(near(params.mission.target_at(0.0).altitude_m, 60.0));
   assert(near(params.mission.target_at(2.5).altitude_m, 75.0));

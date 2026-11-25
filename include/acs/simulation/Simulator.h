@@ -39,6 +39,7 @@ private:
   SimulatorConfig sim_cfg_{};
   const Aircraft& aircraft_;
   acs::gnc::FlightController controller_;
+  SensorConfig sensor_cfg_{};
   Sensors sensors_;
   SensorFusion fusion_;
   WindModel wind_{};

@@ -21,6 +21,17 @@ int main() {
     assert(std::isfinite(state.position_std_m));
     assert(std::isfinite(state.velocity_std_m_s));
   }
+  const auto before_outlier = filter.state();
+  gps.position_ned_m = {10000.0, -10000.0, 5000.0};
+  gps.velocity_ned_m_s = {500.0, -500.0, 300.0};
+  air.altitude_m = 9000.0;
+  air.airspeed_m_s = 700.0;
+  const auto& rejected = filter.update(imu, gps, air, {}, 0.01);
+  assert(!rejected.gps_aiding);
+  assert(!rejected.air_data_aiding);
+  assert(std::abs(rejected.position_ned_m.x - before_outlier.position_ned_m.x) < 1.0);
+  assert(std::abs(rejected.altitude_m - before_outlier.altitude_m) < 1.0);
+
   const auto before_dropout = filter.state();
   gps.valid = false;
   air.valid = false;

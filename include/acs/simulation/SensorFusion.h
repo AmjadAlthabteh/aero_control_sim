@@ -13,6 +13,7 @@ struct FusionConfig {
   double initial_velocity_std_m_s{0.5};
   double initial_accel_bias_std_m_s2{0.2};
   double attitude_time_constant_s{0.5};
+  double innovation_gate_sigma{5.0};
 };
 
 struct FilteredState {
@@ -36,7 +37,7 @@ private:
   using Covariance = std::array<std::array<double, N>, N>;
   void propagate_attitude(const ImuSample&, double);
   void predict(const ImuSample&, double);
-  double correct(const std::array<double, N>&, double residual, double variance);
+  bool correct(const std::array<double, N>&, double residual, double variance);
   void refresh();
   FusionConfig cfg_{};
   SensorConfig sensor_cfg_{};
